@@ -35,7 +35,7 @@ import { MementoItem, MementoKeys } from "../MementoItem";
 
 class ChooseProviderTreeItem extends SelfExpandingTreeItem<any> {
     constructor(private _providerSelection: ProviderSelection) {
-        super("Context:", vscode.TreeItemCollapsibleState.None);
+        super(vscode.l10n.t("Context:"), vscode.TreeItemCollapsibleState.None);
 
         this._subscriptions.push(
             PerforceSCMProvider.onDidChangeScmProviders(
@@ -47,7 +47,7 @@ class ChooseProviderTreeItem extends SelfExpandingTreeItem<any> {
                 if (client) {
                     this.description = client.clientName + " / " + client.userName;
                 } else {
-                    this.description = "<choose a perforce instance>";
+                    this.description = vscode.l10n.t("<choose a perforce instance>");
                 }
                 this.didChange();
             })
@@ -80,8 +80,10 @@ class ChooseProviderTreeItem extends SelfExpandingTreeItem<any> {
     public get command(): vscode.Command {
         return {
             command: "perforce.changeSearch.chooseProvider",
-            title: "Choose Provider",
-            tooltip: "Choose a perforce instance for performing the search",
+            title: vscode.l10n.t("Choose Provider"),
+            tooltip: vscode.l10n.t(
+                "Choose a perforce instance for performing the search"
+            ),
             arguments: [this],
         };
     }
@@ -98,7 +100,9 @@ class ChooseProviderTreeItem extends SelfExpandingTreeItem<any> {
         });
         const chosen = await vscode.window.showQuickPick(items, {
             matchOnDescription: true,
-            placeHolder: "Choose a perforce instance to use as context for the search",
+            placeHolder: vscode.l10n.t(
+                "Choose a perforce instance to use as context for the search"
+            ),
         });
 
         if (chosen && chosen.client !== this.selectedClient) {
@@ -106,19 +110,23 @@ class ChooseProviderTreeItem extends SelfExpandingTreeItem<any> {
         }
     }
 
-    public tooltip = "Choose a perforce instance to use as context for the search";
+    public tooltip = vscode.l10n.t(
+        "Choose a perforce instance to use as context for the search"
+    );
 }
 
 class GoToChangelist extends SelfExpandingTreeItem<any> {
     constructor(private _chooseProvider: ChooseProviderTreeItem) {
-        super("Go to changelist...");
+        super(vscode.l10n.t("Go to changelist..."));
     }
 
     async execute() {
         const selectedClient = this._chooseProvider.selectedClient;
         if (!selectedClient) {
             Display.showImportantError(
-                "Please choose a context before entering a changelist number"
+                vscode.l10n.t(
+                    "Please choose a context before entering a changelist number"
+                )
             );
             throw new Error("No context for changelist search");
         }
@@ -134,7 +142,7 @@ class GoToChangelist extends SelfExpandingTreeItem<any> {
         return {
             command: "perforce.changeSearch.goToChangelist",
             arguments: [this],
-            title: "Go to changelist",
+            title: vscode.l10n.t("Go to changelist"),
         };
     }
 
@@ -155,7 +163,9 @@ class RunSearch extends SelfExpandingTreeItem<any> {
     }
 
     private static makeLabel(autoRefresh: boolean) {
-        return "Search Now\t(Auto: " + (autoRefresh ? "on" : "off") + ")";
+        return autoRefresh
+            ? vscode.l10n.t("Search Now\t(Auto: on)")
+            : vscode.l10n.t("Search Now\t(Auto: off)");
     }
 
     get autoRefresh() {
@@ -173,7 +183,7 @@ class RunSearch extends SelfExpandingTreeItem<any> {
         return {
             command: "perforce.changeSearch.run",
             arguments: [this._root],
-            title: "Run Search",
+            title: vscode.l10n.t("Run Search"),
         };
     }
 
@@ -185,7 +195,7 @@ class RunSearch extends SelfExpandingTreeItem<any> {
         return this._autoRefresh ? "searchNow-auto" : "searchNow-manual";
     }
 
-    tooltip = "Apply current filters";
+    tooltip = vscode.l10n.t("Apply current filters");
 }
 
 interface Diffable {
@@ -217,7 +227,7 @@ class SearchResultShelvedFile extends SelfExpandingTreeItem<any> implements Diff
                 JSON.stringify(this._file),
                 this._chnum,
             ],
-            title: "Show shelved file quick pick",
+            title: vscode.l10n.t("Show shelved file quick pick"),
         };
     }
 
@@ -253,7 +263,7 @@ class SearchResultShelvedFile extends SelfExpandingTreeItem<any> implements Diff
 class SearchResultShelvedSubTree extends SelfExpandingTreeItem<SearchResultShelvedFile> {
     constructor(resource: vscode.Uri, change: DescribedChangelist) {
         super(
-            "Shelved Files (" + change.shelvedFiles.length + ")",
+            vscode.l10n.t("Shelved Files ({0})", change.shelvedFiles.length),
             vscode.TreeItemCollapsibleState.Collapsed
         );
         const files = change.shelvedFiles.map(
@@ -292,7 +302,7 @@ class SearchResultFile extends SelfExpandingTreeItem<any> implements Diffable {
                     this._file.revision
                 ).toString(),
             ],
-            title: "Show file quick pick",
+            title: vscode.l10n.t("Show file quick pick"),
         };
     }
 
@@ -370,7 +380,7 @@ class SearchResultItem extends SelfExpandingTreeItem<
         return {
             command: "perforce.showQuickPick",
             arguments: ["change", this._resource.toString(), this._change.chnum],
-            title: "Show changelist quick pick",
+            title: vscode.l10n.t("Show changelist quick pick"),
         };
     }
 
@@ -492,7 +502,11 @@ abstract class SearchResultTree extends SelfExpandingTreeItem<SearchResultItem> 
 
 class SingleChangeResultTree extends SearchResultTree {
     constructor(resource: vscode.Uri, private _result: DescribedChangelist) {
-        super(resource, [_result], "Focused changelist " + _result.chnum);
+        super(
+            resource,
+            [_result],
+            vscode.l10n.t("Focused changelist {0}", _result.chnum)
+        );
         this.pin();
     }
 
@@ -522,7 +536,7 @@ class AllResultsTree extends SelfExpandingTreeItem<
     SearchResultTree | SingleChangeResultTree
 > {
     constructor() {
-        super("Results", vscode.TreeItemCollapsibleState.Expanded, {
+        super(vscode.l10n.t("Results"), vscode.TreeItemCollapsibleState.Expanded, {
             reverseChildren: true,
         });
     }
@@ -621,7 +635,9 @@ class ChangelistTreeRoot extends SelfExpandingTreeRoot<any> {
     async executeSearch() {
         const selectedClient = this._chooseProvider.selectedClient;
         if (!selectedClient) {
-            Display.showImportantError("Please choose a context before searching");
+            Display.showImportantError(
+                vscode.l10n.t("Please choose a context before searching")
+            );
             throw new Error("No context for changelist search");
         }
         const filters = this._filterRoot.currentFilters;

@@ -9,6 +9,7 @@ import {
     window,
     workspace,
     commands,
+    l10n,
 } from "vscode";
 import {
     HideNonWorkspace,
@@ -260,7 +261,7 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
         window.withProgress(
             {
                 location: ProgressLocation.SourceControl,
-                title: "Syncing...",
+                title: l10n.t("Syncing..."),
             },
             () => this.syncUpdate(paths)
         );
@@ -319,7 +320,7 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
         await window.withProgress(
             {
                 location: ProgressLocation.SourceControl,
-                title: "Updating status...",
+                title: l10n.t("Updating status..."),
             },
             () => this.updateStatus()
         );
@@ -470,18 +471,21 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
             return;
         }
 
+        const submitLabel = l10n.t("Submit");
+        const saveLabel = l10n.t("Save Changelist");
+        const cancelLabel = l10n.t("Cancel");
         const pick = await vscode.window.showQuickPick(
-            ["Submit", "Save Changelist", "Cancel"],
+            [submitLabel, saveLabel, cancelLabel],
             {
                 ignoreFocusOut: true,
             }
         );
 
-        if (!pick || pick === "Cancel") {
+        if (!pick || pick === cancelLabel) {
             return;
         }
 
-        if (pick === "Submit") {
+        if (pick === submitLabel) {
             if (this.hideDefaultNonWorkspace) {
                 // TODO - relies on state - i.e. that savetochangelist applies hideNonWorkspaceFiles
                 const changeListNr = await this.SaveToChangelist(descStr);
@@ -508,8 +512,11 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
         if (this._config.promptBeforeSubmit) {
             if (
                 !(await this.requestConfirmation(
-                    "Are you sure you want to submit changelist " + input.chnum + "?",
-                    "Submit changelist"
+                    l10n.t(
+                        "Are you sure you want to submit changelist {0}?",
+                        input.chnum
+                    ),
+                    l10n.t("Submit changelist")
                 ))
             ) {
                 return;
@@ -517,7 +524,7 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
         }
 
         await p4.submitChangelist(this._workspaceUri, { chnum: input.chnum });
-        Display.showMessage("Changelist Submitted");
+        Display.showMessage(l10n.t("Changelist Submitted"));
         this.Refresh();
     }
 
@@ -532,14 +539,16 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
             chnum: newChange.chnum,
         });
 
-        Display.showMessage("Change " + output.chnum + " submitted");
+        Display.showMessage(l10n.t("Change {0} submitted", output.chnum ?? ""));
         this.Refresh();
     }
 
     public async SubmitSelectedFile(resources: Resource[]) {
         if (resources.some((r) => r.change !== "default")) {
             Display.showModalMessage(
-                "Only files from the default changelist can be submitted selectively"
+                l10n.t(
+                    "Only files from the default changelist can be submitted selectively"
+                )
             );
             return;
         }
@@ -550,7 +559,9 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
         );
         if (spec.files?.length !== resources.length) {
             Display.showModalMessage(
-                "Unable to submit. The selection is inconsistent with the actual default changelist. Perhaps the perforce view needs refreshing?"
+                l10n.t(
+                    "Unable to submit. The selection is inconsistent with the actual default changelist. Perhaps the perforce view needs refreshing?"
+                )
             );
             return;
         }
@@ -576,30 +587,41 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
 
         const opts: p4.RevertOptions = { paths: [], unchanged };
 
-        let message = "Are you sure you want to revert the changes ";
+        let message = "";
         if (input instanceof Resource) {
             if (input.isShelved) {
                 Display.showImportantError(
-                    "Revert cannot be used on shelved file: " + input.basenameWithoutRev
+                    l10n.t(
+                        "Revert cannot be used on shelved file: {0}",
+                        input.basenameWithoutRev
+                    )
                 );
                 return;
             }
             opts.paths = [input.actionUriNoRev];
-            message += "to file " + input.basenameWithoutRev + "?";
+            message = l10n.t(
+                "Are you sure you want to revert the changes to file {0}?",
+                input.basenameWithoutRev
+            );
         } else if (isResourceGroup(input)) {
             opts.paths = ["//..."];
             opts.chnum = input.chnum;
             if (input.isDefault) {
-                message += "in the default changelist?";
+                message = l10n.t(
+                    "Are you sure you want to revert the changes in the default changelist?"
+                );
             } else {
-                message += "in the changelist " + input.chnum + "?";
+                message = l10n.t(
+                    "Are you sure you want to revert the changes in changelist {0}?",
+                    input.chnum
+                );
             }
         } else {
             return;
         }
 
         if (!unchanged) {
-            if (!(await this.requestConfirmation(message, "Revert Changes"))) {
+            if (!(await this.requestConfirmation(message, l10n.t("Revert Changes")))) {
                 return;
             }
         }
@@ -680,7 +702,7 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
             if (revert) {
                 await this.QuietlyRevertChangelist(input.chnum);
             }
-            Display.showMessage("Changelist shelved");
+            Display.showMessage(l10n.t("Changelist shelved"));
         } catch (err) {
             Display.showImportantError(err.toString());
         }
@@ -700,18 +722,18 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
             });
             this.Refresh();
             if (unshelved.warnings.length > 0) {
-                const resolveButton = "Resolve changelist";
+                const resolveButton = l10n.t("Resolve changelist");
                 const chosen = await vscode.window.showWarningMessage(
-                    "Changelist " +
-                        input.chnum +
-                        " was unshelved, but " +
+                    l10n.t(
+                        "Changelist {0} was unshelved, but {1} resolving",
+                        input.chnum,
                         pluralise(
                             unshelved.warnings.length,
-                            "file needs",
+                            l10n.t("file needs"),
                             0,
-                            "files need"
-                        ) +
-                        " resolving",
+                            l10n.t("files need")
+                        )
+                    ),
                     resolveButton
                 );
                 if (chosen === resolveButton) {
@@ -719,7 +741,7 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
                     this.Refresh();
                 }
             }
-            Display.showMessage("Changelist unshelved");
+            Display.showMessage(l10n.t("Changelist unshelved"));
         } catch (err) {
             Display.showImportantError(err.toString());
         }
@@ -730,12 +752,12 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
             throw new Error("Cannot delete shelved files from the default changelist");
         }
 
-        const message =
-            "Are you sure you want to delete the shelved files from changelist " +
-            input.chnum +
-            "?";
+        const message = l10n.t(
+            "Are you sure you want to delete the shelved files from changelist {0}?",
+            input.chnum
+        );
 
-        if (!(await this.requestConfirmation(message, "Delete Shelved Files"))) {
+        if (!(await this.requestConfirmation(message, l10n.t("Delete Shelved Files")))) {
             return;
         }
 
@@ -745,16 +767,16 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
                 delete: true,
             });
             this.Refresh();
-            Display.showMessage("Shelved files deleted");
+            Display.showMessage(l10n.t("Shelved files deleted"));
         } catch (err) {
             Display.showImportantError(err.toString());
         }
     }
 
     async showResolveWarningForFile(input: Resource) {
-        const resolveButton = "Resolve file";
+        const resolveButton = l10n.t("Resolve file");
         const chosen = await vscode.window.showWarningMessage(
-            input.basenameWithoutRev + " was unshelved, but needs resolving",
+            l10n.t("{0} was unshelved, but needs resolving", input.basenameWithoutRev),
             resolveButton
         );
         if (chosen === resolveButton) {
@@ -773,10 +795,10 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
 
         if (mode === FileShelveMode.PROMPT) {
             const file = input.basenameWithoutRev;
-            const message = file + " was unshelved. Delete the shelved file?";
-            const yes = "Delete " + file + "@=" + input.change;
-            const always = "Always";
-            const never = "Never";
+            const message = l10n.t("{0} was unshelved. Delete the shelved file?", file);
+            const yes = l10n.t("Delete {0}@={1}", file, input.change);
+            const always = l10n.t("Always");
+            const never = l10n.t("Never");
             const chosen = await vscode.window.showWarningMessage(
                 message,
                 { modal: true },
@@ -811,10 +833,10 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
 
         if (mode === FileShelveMode.PROMPT) {
             const file = input.basenameWithoutRev;
-            const message = file + " was shelved. Revert the open file?";
-            const yes = "Revert " + file;
-            const always = "Always";
-            const never = "Never";
+            const message = l10n.t("{0} was shelved. Revert the open file?", file);
+            const yes = l10n.t("Revert {0}", file);
+            const always = l10n.t("Always");
+            const never = l10n.t("Never");
             const chosen = await vscode.window.showWarningMessage(
                 message,
                 { modal: true },
@@ -864,7 +886,9 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
     public async ShelveMultiple(input: Resource[]) {
         if (input.some((r) => r.isShelved)) {
             Display.showModalMessage(
-                "Some selected files are already shelved. Please select only unshelved files"
+                l10n.t(
+                    "Some selected files are already shelved. Please select only unshelved files"
+                )
             );
             return;
         }
@@ -880,7 +904,9 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
     public async UnshelveMultiple(input: Resource[]) {
         if (input.some((r) => !r.isShelved)) {
             Display.showModalMessage(
-                "Some selected files are not shelved. Please select only shelved files"
+                l10n.t(
+                    "Some selected files are not shelved. Please select only shelved files"
+                )
             );
             return;
         }
@@ -896,14 +922,19 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
     public async DeleteShelvedFile(input: Resource): Promise<void> {
         if (!input.isShelved) {
             Display.showImportantError(
-                "Shelve cannot be used on normal file: " + input.basenameWithoutRev
+                l10n.t(
+                    "Shelve cannot be used on normal file: {0}",
+                    input.basenameWithoutRev
+                )
             );
             return;
         }
 
-        const message =
-            "Are you sure you want to delete the shelved file " + input.depotPath;
-        if (!(await this.requestConfirmation(message, "Delete Shelved File"))) {
+        const message = l10n.t(
+            "Are you sure you want to delete the shelved file {0}",
+            input.depotPath
+        );
+        if (!(await this.requestConfirmation(message, l10n.t("Delete Shelved File")))) {
             return;
         }
 
@@ -922,11 +953,11 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
 
     private async requestJobId(chnum: string) {
         return await window.showInputBox({
-            prompt: "Enter the job to be fixed by changelist " + chnum,
+            prompt: l10n.t("Enter the job to be fixed by changelist {0}", chnum),
             placeHolder: "jobNNNNNN",
             validateInput: (val) => {
                 if (val.trim() === "") {
-                    return "Enter a job name";
+                    return l10n.t("Enter a job name");
                 }
             },
         });
@@ -945,7 +976,7 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
         try {
             await p4.fixJob(this._workspaceUri, { chnum: input.chnum, jobId });
             this.Refresh();
-            Display.showMessage("Job " + jobId + " added");
+            Display.showMessage(l10n.t("Job {0} added", jobId));
         } catch (err) {
             Display.showImportantError(err.toString());
         }
@@ -966,13 +997,13 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
 
         if (items.length === 0) {
             Display.showModalMessage(
-                "Changelist " + chnum + " does not have any jobs attached"
+                l10n.t("Changelist {0} does not have any jobs attached", chnum)
             );
             return;
         }
 
         const job = await window.showQuickPick(items, {
-            placeHolder: "Select a job to remove",
+            placeHolder: l10n.t("Select a job to remove"),
             matchOnDescription: true,
             matchOnDetail: true,
         });
@@ -1000,7 +1031,7 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
                 removeFix: true,
             });
             this.Refresh();
-            Display.showMessage("Job " + jobId + " removed");
+            Display.showMessage(l10n.t("Job {0} removed", jobId));
         } catch (err) {
             Display.showImportantError(err.toString());
         }
@@ -1013,10 +1044,10 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
 
     private async requestChangelistDescription() {
         const newText = await window.showInputBox({
-            prompt: "Enter the new changelist's description",
+            prompt: l10n.t("Enter the new changelist's description"),
             validateInput: (val) => {
                 if (val.trim() === "") {
-                    return "Description must not be empty";
+                    return l10n.t("Description must not be empty");
                 }
             },
         });
@@ -1031,7 +1062,7 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
 
     public async ReopenFile(resources: Resource[]): Promise<void> {
         if (resources.some((r) => r.isShelved)) {
-            Display.showImportantError("Cannot reopen a shelved file");
+            Display.showImportantError(l10n.t("Cannot reopen a shelved file"));
             throw new Error("Cannot reopen shelved file");
         }
 
@@ -1043,10 +1074,10 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
         const items = [];
         items.push({
             id: "default",
-            label: this._defaultGroup?.label ?? "Default Changelist",
+            label: this._defaultGroup?.label ?? l10n.t("Default Changelist"),
             description: "",
         });
-        items.push({ id: "new", label: "New Changelist...", description: "" });
+        items.push({ id: "new", label: l10n.t("New Changelist..."), description: "" });
         this._pendingGroups.forEach((value, key) => {
             items.push({
                 id: key,
@@ -1057,7 +1088,7 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
 
         const selection = await window.showQuickPick(items, {
             matchOnDescription: true,
-            placeHolder: "Choose a changelist:",
+            placeHolder: l10n.t("Choose a changelist:"),
         });
 
         if (selection === undefined) {
@@ -1295,7 +1326,7 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
         if (!this._defaultGroup) {
             this._defaultGroup = this._sourceControl.createResourceGroup(
                 "default",
-                "Default Changelist"
+                l10n.t("Default Changelist")
             ) as ResourceGroup;
             this._defaultGroup.isDefault = true;
             this._defaultGroup.model = this;

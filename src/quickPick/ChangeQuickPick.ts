@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { l10n } from "vscode";
 
 import * as PerforceUri from "../PerforceUri";
 import * as p4 from "../api/PerforceApi";
@@ -30,7 +31,7 @@ export const changeQuickPickProvider: qp.ActionableQuickPickProvider = {
         });
 
         if (changes.length < 1) {
-            Display.showImportantError("Unable to find change details");
+            Display.showImportantError(l10n.t("Unable to find change details"));
             throw new Error("Unable to find change details");
         }
 
@@ -57,16 +58,14 @@ export const changeQuickPickProvider: qp.ActionableQuickPickProvider = {
 
         return {
             items: actions,
-            placeHolder:
-                (change.isPending ? "Pending" : "Submitted") +
-                " change " +
-                chnum +
-                " by " +
-                change.user +
-                " on " +
-                toReadableDateTime(change.date) +
-                " : " +
-                change.description.join(" "),
+            placeHolder: l10n.t(
+                "{0} change {1} by {2} on {3} : {4}",
+                change.isPending ? l10n.t("Pending") : l10n.t("Submitted"),
+                chnum,
+                change.user,
+                toReadableDateTime(change.date),
+                change.description.join(" ")
+            ),
         };
     },
 };
@@ -74,18 +73,18 @@ export const changeQuickPickProvider: qp.ActionableQuickPickProvider = {
 async function unshelveAndRefresh(resource: vscode.Uri, options: p4.UnshelveOptions) {
     try {
         const output = await p4.unshelve(resource, options);
-        Display.showMessage("Changelist unshelved");
+        Display.showMessage(l10n.t("Changelist unshelved"));
         PerforceSCMProvider.RefreshAll();
         if (output.warnings.length > 0) {
             const resolveButton: string | undefined = options.toChnum
-                ? "Resolve changelist"
+                ? l10n.t("Resolve changelist")
                 : undefined;
             const chosen = await vscode.window.showWarningMessage(
-                "Changelist #" +
-                    options.shelvedChnum +
-                    " was unshelved, but " +
-                    pluralise(output.warnings.length, "file needs", 0, "files need") +
-                    " resolving",
+                l10n.t(
+                    "Changelist #{0} was unshelved, but {1} resolving",
+                    options.shelvedChnum,
+                    pluralise(output.warnings.length, "file needs", 0, "files need")
+                ),
                 ...[resolveButton].filter(isTruthy)
             );
             if (chosen && chosen === resolveButton) {
@@ -107,9 +106,10 @@ export const unshelveChangeQuickPickProvider: qp.ActionableQuickPickProvider = {
     ): Promise<qp.ActionableQuickPick> => {
         const resource = qp.asUri(resourceOrStr);
         const defaultChangelistAction: qp.ActionableQuickPickItem = {
-            label: "Default changelist",
-            description:
-                "Unshelve into the default changelist, or the current changelist if already unshelved",
+            label: l10n.t("Default changelist"),
+            description: l10n.t(
+                "Unshelve into the default changelist, or the current changelist if already unshelved"
+            ),
             performAction: () =>
                 unshelveAndRefresh(resource, {
                     shelvedChnum: chnum,
@@ -118,8 +118,8 @@ export const unshelveChangeQuickPickProvider: qp.ActionableQuickPickProvider = {
                 }),
         };
         const newChangelistAction: qp.ActionableQuickPickItem = {
-            label: "New changelist",
-            description: "Unshelve into a new changelist",
+            label: l10n.t("New changelist"),
+            description: l10n.t("Unshelve into a new changelist"),
             performAction: async () => {
                 const spec = await p4.getChangeSpec(resource, {});
                 spec.description = "Unshelved from change #" + chnum;
@@ -143,11 +143,14 @@ export const unshelveChangeQuickPickProvider: qp.ActionableQuickPickProvider = {
             items: [defaultChangelistAction, newChangelistAction, ...changelistActions],
             excludeFromHistory: true,
             placeHolder:
-                "Unshelve changelist " +
-                chnum +
-                (branchMapping ? " through branch " + branchMapping : "") +
-                " into..." +
-                (clobber ? " (WILL CLOBBER WRITABLE FILES)" : ""),
+                (branchMapping
+                    ? l10n.t(
+                          "Unshelve changelist {0} through branch {1} into...",
+                          chnum,
+                          branchMapping
+                      )
+                    : l10n.t("Unshelve changelist {0} into...", chnum)) +
+                (clobber ? " " + l10n.t("(WILL CLOBBER WRITABLE FILES)") : ""),
         };
     },
 };
@@ -219,7 +222,7 @@ function makeFocusPick(
 ): qp.ActionableQuickPickItem[] {
     return [
         {
-            label: "$(multiple-windows) Focus in changelist search view",
+            label: l10n.t("$(multiple-windows) Focus in changelist search view"),
             performAction: () => {
                 focusChangelist(resource, change);
             },
@@ -237,7 +240,7 @@ function makeSwarmPick(change: DescribedChangelist): qp.ActionableQuickPickItem[
         const uri = vscode.Uri.parse(swarmAddr, true);
         return [
             {
-                label: "$(eye) Open in review tool",
+                label: l10n.t("$(eye) Open in review tool"),
                 description: "$(link-external) " + uri.toString(),
                 performAction: () => {
                     vscode.env.openExternal(uri);
@@ -246,9 +249,10 @@ function makeSwarmPick(change: DescribedChangelist): qp.ActionableQuickPickItem[
         ];
     } catch (err) {
         Display.showImportantError(
-            "Could not parse swarm link " +
-                swarmAddr +
-                " - make sure you have included the protocol, e.g. https://"
+            l10n.t(
+                "Could not parse swarm link {0} - make sure you have included the protocol, e.g. https://",
+                swarmAddr
+            )
         );
         return [];
     }
@@ -260,8 +264,8 @@ function makeEditPicks(
 ): qp.ActionableQuickPickItem[] {
     return [
         {
-            label: "$(edit) Edit changelist",
-            description: "Edit the full changelist spec in the editor",
+            label: l10n.t("$(edit) Edit changelist"),
+            description: l10n.t("Edit the full changelist spec in the editor"),
             performAction: () => {
                 changeSpecEditor.editSpec(uri, change.chnum);
             },
@@ -274,9 +278,9 @@ function makeClipboardPicks(
     change: DescribedChangelist
 ): qp.ActionableQuickPickItem[] {
     return [
-        qp.makeClipPick("change number", change.chnum),
-        qp.makeClipPick("user", change.user),
-        qp.makeClipPick("change description", change.description.join("\n")),
+        qp.makeClipPick(l10n.t("change number"), change.chnum),
+        qp.makeClipPick(l10n.t("user"), change.user),
+        qp.makeClipPick(l10n.t("change description"), change.description.join("\n")),
     ];
 }
 
@@ -286,7 +290,7 @@ function makeFilePicks(
 ): qp.ActionableQuickPickItem[] {
     return [
         {
-            label: "Changed files: " + change.affectedFiles.length,
+            label: l10n.t("Changed files: {0}", change.affectedFiles.length),
         },
     ].concat(
         change.affectedFiles.map<qp.ActionableQuickPickItem>((file) => {
@@ -324,12 +328,12 @@ async function searchForBranch(
             nameFilter: branch.replace("*", "..."),
         });
         if (branches.length < 1) {
-            Display.showImportantError("No branch mappings match " + branch);
+            Display.showImportantError(l10n.t("No branch mappings match {0}", branch));
             return;
         }
         return await vscode.window.showQuickPick(
             branches.map((b) => b.branch),
-            { placeHolder: "Choose a matching branch" }
+            { placeHolder: l10n.t("Choose a matching branch") }
         );
     } catch (err) {
         Display.showImportantError(err);
@@ -345,21 +349,21 @@ function makeUnshelvePicks(
     }
     return [
         {
-            label: "$(cloud-download) Unshelve changelist...",
-            description: "Unshelve into a selected changelist",
+            label: l10n.t("$(cloud-download) Unshelve changelist..."),
+            description: l10n.t("Unshelve into a selected changelist"),
             performAction: () => {
                 showUnshelveQuickPick(uri, change.chnum);
             },
         },
         {
-            label: "$(cloud-download) Unshelve via branch mapping...",
-            description: "Unshelve, mapping through a branch spec",
+            label: l10n.t("$(cloud-download) Unshelve via branch mapping..."),
+            description: l10n.t("Unshelve, mapping through a branch spec"),
             performAction: async (reopen) => {
                 const branch = await vscode.window.showInputBox({
-                    prompt:
-                        "Enter branch name to unshelve changelist " +
-                        change.chnum +
-                        " through (use * to search by wildcard)",
+                    prompt: l10n.t(
+                        "Enter branch name to unshelve changelist {0} through (use * to search by wildcard)",
+                        change.chnum
+                    ),
                     ignoreFocusOut: true,
                 });
 
@@ -386,7 +390,7 @@ function makeShelvedFilePicks(
     }
     return [
         {
-            label: "Shelved files: " + change.shelvedFiles.length,
+            label: l10n.t("Shelved files: {0}", change.shelvedFiles.length),
         },
     ].concat(
         change.shelvedFiles.map<qp.ActionableQuickPickItem>((file) => {
@@ -419,7 +423,7 @@ function makeJobPicks(
 ): qp.ActionableQuickPickItem[] {
     return [
         {
-            label: "Jobs fixed: " + change.fixedJobs.length,
+            label: l10n.t("Jobs fixed: {0}", change.fixedJobs.length),
         },
     ].concat(
         change.fixedJobs.map<qp.ActionableQuickPickItem>((job) => {

@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { l10n } from "vscode";
 
 import * as qp from "./QuickPickProvider";
 import { ChangeInfo } from "../api/CommonTypes";
@@ -29,7 +30,7 @@ export const changeSearchQuickPickProvider: qp.ActionableQuickPickProvider = {
 
         return Promise.resolve({
             items,
-            placeHolder: "Search Results: " + title,
+            placeHolder: l10n.t("Search Results: {0}", title),
         });
     },
 };

@@ -11,6 +11,7 @@ import {
     TextDocument,
     env,
     EventEmitter,
+    l10n,
 } from "vscode";
 import { Model, ResourceGroup } from "./scm/Model";
 import { Resource } from "./scm/Resource";
@@ -145,7 +146,7 @@ export class PerforceSCMProvider {
         };
         this._model._sourceControl.acceptInputCommand = {
             command: "perforce.processChangelist",
-            title: "Process Changelist",
+            title: l10n.t("Process Changelist"),
             arguments: [this._model._sourceControl],
         };
 
@@ -153,8 +154,9 @@ export class PerforceSCMProvider {
         this._model.onDidChange(this.onDidModelChange.bind(this), this, this.disposables);
 
         this._model._sourceControl.inputBox.value = "";
-        this._model._sourceControl.inputBox.placeholder =
-            "Message (press {0} to create changelist)";
+        this._model._sourceControl.inputBox.placeholder = l10n.t(
+            "Message (press {0} to create changelist)"
+        );
     }
 
     public async Initialize() {
@@ -485,7 +487,7 @@ export class PerforceSCMProvider {
                 return { label, value: instance };
             });
             const chosen = await window.showQuickPick(items, {
-                placeHolder: "Choose a context for this operation",
+                placeHolder: l10n.t("Choose a context for this operation"),
             });
             if (chosen) {
                 return chosen.value;
@@ -839,9 +841,10 @@ export class PerforceSCMProvider {
             env.openExternal(Uri.parse(link, true));
         } catch {
             Display.showImportantError(
-                "Could not open swarm link " +
-                    link +
-                    " - Have you included the protocol? (e.g. https://)"
+                l10n.t(
+                    "Could not open swarm link {0} - Have you included the protocol? (e.g. https://)",
+                    link
+                )
             );
         }
     }

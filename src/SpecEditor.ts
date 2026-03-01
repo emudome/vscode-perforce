@@ -99,10 +99,12 @@ abstract class SpecEditor {
             vscode.workspace.getConfiguration("editor").get("insertSpaces") &&
             !vscode.workspace.getConfiguration("editor").get("detectIndentation")
         ) {
-            const enable = "Enable tab detection in this workspace";
-            const ignore = "Don't show this warning";
+            const enable = vscode.l10n.t("Enable tab detection in this workspace");
+            const ignore = vscode.l10n.t("Don't show this warning");
             const chosen = await vscode.window.showWarningMessage(
-                "WARNING - your editor is configured to use spaces and never tabs, which causes strange indentation when editing perforce spec files. Consider enabling the `editor.detectIndentation` setting",
+                vscode.l10n.t(
+                    "WARNING - your editor is configured to use spaces and never tabs, which causes strange indentation when editing perforce spec files. Consider enabling the `editor.detectIndentation` setting"
+                ),
                 enable,
                 ignore
             );
@@ -168,7 +170,7 @@ abstract class SpecEditor {
         await vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Window,
-                title: "Retrieving spec for " + this._type + " " + item,
+                title: vscode.l10n.t("Retrieving spec for {0} {1}", this._type, item),
             },
             () => this.editSpecImpl(resource, item)
         );
@@ -216,7 +218,7 @@ abstract class SpecEditor {
             const newItem = await vscode.window.withProgress(
                 {
                     location: vscode.ProgressLocation.Window,
-                    title: "Uploading spec for " + this._type + " " + item,
+                    title: vscode.l10n.t("Uploading spec for {0} {1}", this._type, item),
                 },
                 () => this.inputSpecText(resource, item, text)
             );
@@ -252,17 +254,20 @@ abstract class SpecEditor {
             const doc = event.document;
             if (this.isValidSpecFilename(doc.fileName) && this.getResource(doc.uri)) {
                 const item = this.getSpecItemName(doc.fileName);
-                const ok = "Apply now";
+                const ok = vscode.l10n.t("Apply now");
                 this._hasUnresolvedPrompt = true;
 
                 const message =
                     item === "new"
-                        ? "Create new " + this._type + " on the perforce server now?"
-                        : "Apply your changes to the spec for " +
-                          this._type +
-                          " " +
-                          item +
-                          " on the perforce server now?";
+                        ? vscode.l10n.t(
+                              "Create new {0} on the perforce server now?",
+                              this._type
+                          )
+                        : vscode.l10n.t(
+                              "Apply your changes to the spec for {0} {1} on the perforce server now?",
+                              this._type,
+                              item
+                          );
                 const chosen = await vscode.window.showInformationMessage(message, ok);
                 this._hasUnresolvedPrompt = false;
                 if (chosen === ok) {

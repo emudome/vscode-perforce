@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { l10n } from "vscode";
 
 import * as PerforceUri from "../PerforceUri";
 import * as p4 from "../api/PerforceApi";
@@ -13,11 +14,11 @@ export const integrationQuickPickProvider: qp.ActionableQuickPickProvider = {
         return {
             items: actions,
             excludeFromHistory: true,
-            placeHolder:
-                "Choose integration for " +
-                PerforceUri.getDepotPathFromDepotUri(uri) +
-                "#" +
-                PerforceUri.getRevOrAtLabel(uri),
+            placeHolder: l10n.t(
+                "Choose integration for {0}#{1}",
+                PerforceUri.getDepotPathFromDepotUri(uri),
+                PerforceUri.getRevOrAtLabel(uri)
+            ),
         };
     },
 };
