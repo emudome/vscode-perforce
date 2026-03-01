@@ -115,6 +115,14 @@ export class ConfigAccessor {
         return this.getConfigItem("enableFileSystemActionsWithoutFolder") ?? true;
     }
 
+    public get avoidDefaultChangelist(): boolean {
+        return this.getConfigItem("avoidDefaultChangelist") ?? true;
+    }
+
+    public get defaultChangelistDescription(): string {
+        return this.getConfigItem("defaultChangelistDescription") ?? "Working changelist";
+    }
+
     public get resolveP4EDITOR(): string | undefined {
         return this.getConfigItem("resolve.p4editor");
     }

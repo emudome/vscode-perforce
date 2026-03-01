@@ -22,6 +22,8 @@
     "config.addOnFileCreate.description": "作成時にファイルを自動的にデポに add する",
     "config.deleteOnFileDelete.description": "削除時にファイルを自動的にデポから delete する",
     "config.enableFileSystemActionsWithoutFolder.description": "VS Code フォルダーが開かれていない場合でも、ファイルシステムアクション（例：保存時の edit）がファイルシステムの変更に反応できるようにします",
+    "config.avoidDefaultChangelist.description": "有効にすると、edit および add 操作はデフォルトチェンジリストの代わりに番号付きチェンジリストを使用します。チェンジリストが存在しない場合は自動的に作成されます。",
+    "config.defaultChangelistDescription.description": "自動的にチェンジリストを作成する際に使用する説明文（avoidDefaultChangelist が有効な場合）",
     "config.annotate.followBranches.description": "ファイルの注釈（annotate）時にブランチアクションを追跡するかどうか",
     "config.annotate.gutterColumns.description": "実験的 - 変更される可能性あり\nPerforce 注釈の概要テキストを表示するためのフォーマット。\n各行はカラムの名前と、その後にデフォルトの長さを示します。\n\n以下のフラグがカラム名の前に、この順序で表示される場合があります:\n   -> : テキストがカラムを埋めない場合、右寄せにする（先行フィールドがスペースを回収）\n   {text} : 波括弧内の値をテキストの前に付ける\n   ... : テキストを末尾ではなく先頭から切り詰める\n\n以下のカラムがサポートされています:\nrevision, chnum, user, client, description, timeAgo\n\n例: カラム '{@}...user|5' はユーザー名 'Xavier' を '@…vier' に変換します",
     "config.client.description": "P4CLIENT 設定を指定されたクライアント名で上書きします",

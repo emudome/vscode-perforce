@@ -880,6 +880,20 @@ export class PerforceSCMProvider {
         return this.instances.some((inst) => inst._model.mayHaveConflictForFile(uri));
     }
 
+    /**
+     * Find the Model that owns a given file URI (based on workspace root matching).
+     */
+    public static getModelForUri(uri: Uri): Model | undefined {
+        for (const inst of this.instances) {
+            const rootPath = inst._clientRoot.clientRoot.fsPath;
+            if (uri.fsPath.startsWith(rootPath)) {
+                return inst._model;
+            }
+        }
+        // Fall back to first instance if available
+        return this.instances[0]?._model;
+    }
+
     private static async open(
         resource: Resource,
         diffType?: DiffProvider.DiffType,

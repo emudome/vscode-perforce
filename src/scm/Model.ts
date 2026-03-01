@@ -30,6 +30,7 @@ import { showQuickPickForChangelist } from "../quickPick/ChangeQuickPick";
 import { showQuickPickForJob } from "../quickPick/JobQuickPick";
 import { changeSpecEditor, jobSpecEditor } from "../SpecEditor";
 import { DecorationProvider } from "./DecorationProvider";
+import { ActiveChangelist } from "../ActiveChangelist";
 
 function isResourceGroup(arg: any): arg is SourceControlResourceGroup {
     return arg && arg.id !== undefined;
@@ -129,6 +130,28 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
 
     get workspaceUri() {
         return this._workspaceUri;
+    }
+
+    get clientName() {
+        return this._clientName;
+    }
+
+    /**
+     * Returns the list of pending (numbered) changelist numbers.
+     */
+    public getPendingChangelistNumbers(): string[] {
+        return [...this._pendingGroups.keys()];
+    }
+
+    /**
+     * Returns a map of pending changelist number to description.
+     */
+    public getPendingChangelistDescriptions(): Map<string, string> {
+        const descs = new Map<string, string>();
+        this._pendingGroups.forEach((value, key) => {
+            descs.set(key, value.description);
+        });
+        return descs;
     }
 
     public get ResourceGroups(): ResourceGroup[] {
@@ -1371,6 +1394,18 @@ export class Model implements Disposable, vscode.FileDecorationProvider {
         Model.updateContextVars(groups);
         this.updateDecorations();
         this._fullCleanOnNextRefresh = false;
+
+        // Notify ActiveChangelist of updated pending changelists
+        const pendingChnums = [...this._pendingGroups.keys()];
+        const pendingDescriptions = new Map<string, string>();
+        this._pendingGroups.forEach((value, key) => {
+            pendingDescriptions.set(key, value.description);
+        });
+        ActiveChangelist.updatePendingChangelists(
+            this._clientName,
+            pendingChnums,
+            pendingDescriptions
+        );
     }
 
     private async getChanges(

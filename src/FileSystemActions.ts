@@ -155,7 +155,7 @@ export default class FileSystemActions {
         ) {
             return Promise.resolve(true);
         } else {
-            return PerforceCommands.p4edit(uri);
+            return PerforceCommands.p4editAutomatic(uri);
         }
     }
 
@@ -203,7 +203,7 @@ export default class FileSystemActions {
 
     private static onFilesAdded(filesAdded: FileCreateEvent) {
         for (const uri of filesAdded.files) {
-            PerforceCommands.p4add(uri);
+            PerforceCommands.p4addAutomatic(uri);
         }
     }
 }

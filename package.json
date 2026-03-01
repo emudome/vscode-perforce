@@ -143,6 +143,16 @@
                     "default": true,
                     "description": "%config.enableFileSystemActionsWithoutFolder.description%"
                 },
+                "perforce.avoidDefaultChangelist": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "%config.avoidDefaultChangelist.description%"
+                },
+                "perforce.defaultChangelistDescription": {
+                    "type": "string",
+                    "default": "Working changelist",
+                    "description": "%config.defaultChangelistDescription.description%"
+                },
                 "perforce.annotate.followBranches": {
                     "type": "boolean",
                     "default": true,

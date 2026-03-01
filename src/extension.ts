@@ -19,11 +19,13 @@ import { isTruthy } from "./TsUtils";
 import { registerChangelistSearch } from "./search/ChangelistTreeView";
 import { createSpecEditor } from "./SpecEditor";
 import { clearAllMementos } from "./MementoItem";
+import { ActiveChangelist } from "./ActiveChangelist";
 
 let _isRegistered = false;
 const _disposable: vscode.Disposable[] = [];
 let _perforceContentProvider: PerforceFileSystemProvider | undefined;
 const _dirsWithNoClient = new Set<string>();
+let _context: vscode.ExtensionContext;
 
 function logInitProgress(uri: vscode.Uri, message: string) {
     Display.channel.appendLine("> " + uri + ": " + message);
@@ -68,7 +70,7 @@ async function findClientRoot(uri: vscode.Uri): Promise<ClientRoot | undefined> 
                 isAboveRoot,
             };
         }
-    } catch (err) {}
+    } catch (err) { }
     return undefined;
 }
 
@@ -119,10 +121,10 @@ async function findP4ConfigFiles(
         logInitProgress(
             workspaceUri,
             "Did NOT find a valid P4CONFIG setting.\n" +
-                "!!! IMPORTANT !!!\nPreviously, if no P4CONFIG setting was found, the extension would look for files name .p4config and parse them.\n" +
-                "This is no longer the case. If you use p4config files, Please set your P4CONFIG setting and restart,\n" +
-                "Either via environment variables or p4 set, e.g.:\n" +
-                "\t\tp4 set P4CONFIG=.p4config\n!!! IMPORTANT !!!\n"
+            "!!! IMPORTANT !!!\nPreviously, if no P4CONFIG setting was found, the extension would look for files name .p4config and parse them.\n" +
+            "This is no longer the case. If you use p4config files, Please set your P4CONFIG setting and restart,\n" +
+            "Either via environment variables or p4 set, e.g.:\n" +
+            "\t\tp4 set P4CONFIG=.p4config\n!!! IMPORTANT !!!\n"
         );
     } else {
         logInitProgress(workspaceUri, "Using pattern " + pattern.pattern);
@@ -186,8 +188,8 @@ function clientRootLog(
     const ignoreMsg = hasWorkingDirOverride
         ? "USING ANYWAY because working dir override is set"
         : shouldAlwaysActivate
-        ? "USING ANYWAY because activation mode is set to ALWAYS"
-        : "IGNORING THIS CLIENT";
+            ? "USING ANYWAY because activation mode is set to ALWAYS"
+            : "IGNORING THIS CLIENT";
     return (
         "  * " +
         source +
@@ -240,11 +242,11 @@ function initClientRoot(workspaceUri: vscode.Uri, client: ClientRoot): boolean {
         logInitProgress(
             workspaceUri,
             "SCM provider already exists for " +
-                client.clientName +
-                " @ " +
-                client.clientRoot.fsPath +
-                " - not creating another for source : " +
-                client.configSource.fsPath
+            client.clientName +
+            " @ " +
+            client.clientRoot.fsPath +
+            " - not creating another for source : " +
+            client.configSource.fsPath
         );
 
         existing.addContributingDir(client.configSource);
@@ -254,11 +256,11 @@ function initClientRoot(workspaceUri: vscode.Uri, client: ClientRoot): boolean {
         logInitProgress(
             workspaceUri,
             "Creating SCM provider for " +
-                client.clientName +
-                " @ " +
-                client.clientRoot.fsPath +
-                " because of source : " +
-                client.configSource.fsPath
+            client.clientName +
+            " @ " +
+            client.clientRoot.fsPath +
+            " because of source : " +
+            client.configSource.fsPath
         );
 
         const scm = initScmProvider(client);
@@ -277,6 +279,14 @@ function initScmProvider(client: ClientRoot): PerforceSCMProvider {
 
     doOneTimeRegistration();
     Display.activateStatusBar();
+
+    // Register the model with ActiveChangelist for active CL tracking
+    ActiveChangelist.registerModel(
+        client.configSource,
+        client.clientName,
+        _context.workspaceState
+    );
+
     return scm;
 }
 
@@ -312,9 +322,9 @@ async function findClientRootsForP4Configs(wksFolder: vscode.WorkspaceFolder) {
     logInitProgress(
         workspaceUri,
         "Found the following roots from the location of " +
-            p4ConfigFiles.length +
-            " P4CONFIG file(s):\n" +
-            foundRootsStr
+        p4ConfigFiles.length +
+        " P4CONFIG file(s):\n" +
+        foundRootsStr
     );
 
     return foundRoots;
@@ -330,9 +340,9 @@ async function initWorkspace(wksFolder: vscode.WorkspaceFolder) {
     logInitProgress(
         workspaceUri,
         "Trying to initialise SCM Providers in this workspace.\n\tNote: the following overrides apply in this workspace:\n" +
-            getOverrideInfo(workspaceUri) +
-            "\n\tExplicit overrides may prevent auto-detection of other perforce client workspaces\n" +
-            "Looking for a client root using the workspace root directory"
+        getOverrideInfo(workspaceUri) +
+        "\n\tExplicit overrides may prevent auto-detection of other perforce client workspaces\n" +
+        "Looking for a client root using the workspace root directory"
     );
 
     const workspaceClientRoot = await findClientRoot(workspaceUri);
@@ -343,12 +353,12 @@ async function initWorkspace(wksFolder: vscode.WorkspaceFolder) {
         logInitProgress(
             workspaceUri,
             "Found workspace using root directory\n" +
-                clientRootLog(
-                    "VS Code workspace root directory",
-                    workspaceClientRoot,
-                    !!overrideDir,
-                    shouldAlwaysActivate
-                )
+            clientRootLog(
+                "VS Code workspace root directory",
+                workspaceClientRoot,
+                !!overrideDir,
+                shouldAlwaysActivate
+            )
         );
     }
 
@@ -399,9 +409,9 @@ async function initWorkspace(wksFolder: vscode.WorkspaceFolder) {
                 logInitProgress(
                     workspaceUri,
                     "NO valid perforce clients found in this directory, but activation mode is set to ALWAYS and a perforce client was found with a different client root\n" +
-                        helpMsg +
-                        "\n" +
-                        "Creating SCM Provider using the workspace found in the root directory."
+                    helpMsg +
+                    "\n" +
+                    "Creating SCM Provider using the workspace found in the root directory."
                 );
 
                 initClientRoots(workspaceUri, workspaceClientRoot);
@@ -409,9 +419,9 @@ async function initWorkspace(wksFolder: vscode.WorkspaceFolder) {
                 logInitProgress(
                     workspaceUri,
                     "NO valid perforce clients found in this directory." +
-                        "Activation mode is set to ALWAYS, but cannot create an scm provider without any client found.\n" +
-                        "Note: It should still be possible to use perforce commands on individual files in the editor.\n" +
-                        helpMsg
+                    "Activation mode is set to ALWAYS, but cannot create an scm provider without any client found.\n" +
+                    "Note: It should still be possible to use perforce commands on individual files in the editor.\n" +
+                    helpMsg
                 );
             }
         } else {
@@ -423,8 +433,8 @@ async function initWorkspace(wksFolder: vscode.WorkspaceFolder) {
                 logInitProgress(
                     workspaceUri,
                     "To FORCE activation for the client '" +
-                        workspaceClientRoot.clientName +
-                        "':\n\tset perforce.activationMode to always.\nThis should allow you to view and manage changelists in that client, but is unlikely to be useful for files in this workspace"
+                    workspaceClientRoot.clientName +
+                    "':\n\tset perforce.activationMode to always.\nThis should allow you to view and manage changelists in that client, but is unlikely to be useful for files in this workspace"
                 );
             }
         }
@@ -471,8 +481,6 @@ async function checkForSlevesque(ctx: vscode.ExtensionContext) {
         }
     }
 }
-
-let _context: vscode.ExtensionContext;
 
 export async function activate(ctx: vscode.ExtensionContext) {
     _context = ctx;
@@ -542,6 +550,7 @@ function doOneTimeRegistration() {
         );
 
         Display.initialize(_disposable);
+        ActiveChangelist.initialize(_disposable);
         ContextVars.initialize(_disposable);
 
         _perforceContentProvider = initPerforceFsProvider();
@@ -687,8 +696,8 @@ async function onDidChangeWorkspaceFolders(
 
             Display.channel.appendLine(
                 "\t>>> Removed " +
-                    removedScms.length +
-                    " SCM provider(s) with no remaining contributing workspaces"
+                removedScms.length +
+                " SCM provider(s) with no remaining contributing workspaces"
             );
         }
     } catch (err) {
@@ -731,11 +740,11 @@ async function initForUnknownDoc(event: vscode.TextDocument) {
             logFileMessage(
                 uri,
                 "Creating SCM provider for " +
-                    client.clientName +
-                    " @ " +
-                    client.clientRoot.fsPath +
-                    " because of source " +
-                    uri.fsPath
+                client.clientName +
+                " @ " +
+                client.clientRoot.fsPath +
+                " because of source " +
+                uri.fsPath
             );
             const scm = initScmProvider(client);
             scm.addContributingDoc(event);
@@ -781,8 +790,8 @@ function onDidCloseTextDocument(event: vscode.TextDocument) {
         logFileMessage(
             event.uri,
             "Closed document " +
-                event.uri.fsPath +
-                " WAS contributing to an SCM provider. Checking if it can be removed"
+            event.uri.fsPath +
+            " WAS contributing to an SCM provider. Checking if it can be removed"
         );
         const removed = PerforceSCMProvider.disposeInstancesWithoutContributors();
         logFileMessage(event.uri, "Removed " + removed.length + " SCM providers");

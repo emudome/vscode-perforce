@@ -22,6 +22,8 @@
     "config.addOnFileCreate.description": "Automatically Add a file to depot when Created",
     "config.deleteOnFileDelete.description": "Automatically delete a file from depot when deleted",
     "config.enableFileSystemActionsWithoutFolder.description": "Allows file system actions (e.g. edit on save) to react to file system changes when no VS Code folder is open",
+    "config.avoidDefaultChangelist.description": "When enabled, edit and add operations will use a numbered changelist instead of the default changelist. A changelist will be created automatically if none exists.",
+    "config.defaultChangelistDescription.description": "The description to use when automatically creating a new changelist (when avoidDefaultChangelist is enabled)",
     "config.annotate.followBranches.description": "Whether to follow branch actions when annotating a file",
     "config.annotate.gutterColumns.description": "EXPERIMENTAL - SUBJECT TO CHANGE\nThe format for displaying summary text for perforce annotations.\nEach line represents a column, followed by its default length.\n\nThe following flags may appear before the column name, IN THIS ORDER:\n   -> : align text to the right, when the text does not fill the column (preceding fields will reclaim spaces)\n   {text} : prefix text with the value in curly braces\n   ... : truncate the text from the beginning, instead of the end\n\nThe following columns are supported:\nrevision, chnum, user, client, description, timeAgo\n\nFor example, a column '{@}...user|5' will turn the username 'Xavier' into '@…vier'",
     "config.client.description": "Overrides any P4CLIENT setting with the specified client name",

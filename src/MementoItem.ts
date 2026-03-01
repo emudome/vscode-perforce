@@ -7,6 +7,7 @@ export enum MementoKeys {
     SEARCH_CLIENT = "changeSearch.clientFilter",
     SEARCH_FILES = "changeSearch.fileFilters",
     SEARCH_AUTO_REFRESH = "changeSearch.autoRefresh",
+    ACTIVE_CHANGELIST = "activeChangelist",
 }
 
 // keys for global mementos

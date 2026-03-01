@@ -31,6 +31,7 @@ import { splitBy, pluralise, isTruthy } from "./TsUtils";
 import { perforceFsProvider } from "./FileSystemProvider";
 import { showRevChooserForFile } from "./quickPick/FileQuickPick";
 import { changeSpecEditor, jobSpecEditor } from "./SpecEditor";
+import { ActiveChangelist } from "./ActiveChangelist";
 
 // TODO resolve
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -100,7 +101,8 @@ export namespace PerforceCommands {
 
     export async function p4add(fileUri: Uri) {
         try {
-            await p4.add(fileUri, { files: [fileUri] });
+            const chnum = await resolveChangelistForFile(fileUri, false);
+            await p4.add(fileUri, { chnum, files: [fileUri] });
             Display.showMessage(l10n.t("File opened for add"));
             Display.updateEditor();
         } catch {}
@@ -145,11 +147,74 @@ export namespace PerforceCommands {
 
     export async function p4edit(fileUri: Uri) {
         try {
-            await p4.edit(fileUri, { files: [fileUri] });
+            const chnum = await resolveChangelistForFile(fileUri, false);
+            await p4.edit(fileUri, { chnum, files: [fileUri] });
             Display.showMessage(l10n.t("File opened for edit"));
             Display.updateEditor();
         } catch {}
         PerforceSCMProvider.RefreshAll();
+    }
+
+    /**
+     * Variant of p4edit for automatic operations (file save, file modified).
+     * Uses isAutomatic=true to avoid interactive prompts.
+     */
+    export async function p4editAutomatic(fileUri: Uri) {
+        try {
+            const chnum = await resolveChangelistForFile(fileUri, true);
+            await p4.edit(fileUri, { chnum, files: [fileUri] });
+            Display.showMessage(l10n.t("File opened for edit"));
+            Display.updateEditor();
+        } catch {}
+        PerforceSCMProvider.RefreshAll();
+    }
+
+    /**
+     * Variant of p4add for automatic operations (file create).
+     */
+    export async function p4addAutomatic(fileUri: Uri) {
+        try {
+            const chnum = await resolveChangelistForFile(fileUri, true);
+            await p4.add(fileUri, { chnum, files: [fileUri] });
+            Display.showMessage(l10n.t("File opened for add"));
+            Display.updateEditor();
+        } catch {}
+        PerforceSCMProvider.RefreshAll();
+    }
+
+    /**
+     * Resolve which changelist to use for a file operation.
+     */
+    async function resolveChangelistForFile(
+        fileUri: Uri,
+        isAutomatic: boolean
+    ): Promise<string | undefined> {
+        const model = PerforceSCMProvider.getModelForUri(fileUri);
+        if (!model) {
+            return undefined;
+        }
+        return ActiveChangelist.resolveChangelist(
+            model.clientName,
+            model.workspaceUri,
+            isAutomatic
+        );
+    }
+
+    /**
+     * Resolve changelist for explorer operations (uses the first file's model).
+     */
+    async function resolveChangelistForExplorer(
+        resource: Uri
+    ): Promise<string | undefined> {
+        const model = PerforceSCMProvider.getModelForUri(resource);
+        if (!model) {
+            return undefined;
+        }
+        return ActiveChangelist.resolveChangelist(
+            model.clientName,
+            model.workspaceUri,
+            false
+        );
     }
 
     export async function deleteOpenFile() {
@@ -515,15 +580,17 @@ export namespace PerforceCommands {
     }
 
     export function addExplorerFiles(selected: Uri | string, all?: Uri[]) {
-        return explorerOperationByDir(selected, all, (dirFiles, resource) =>
-            p4.add(resource, { files: dirFiles })
-        );
+        return explorerOperationByDir(selected, all, async (dirFiles, resource) => {
+            const chnum = await resolveChangelistForExplorer(resource);
+            return p4.add(resource, { chnum, files: dirFiles });
+        });
     }
 
     export function editExplorerFiles(selected: Uri | string, all?: Uri[]) {
-        return explorerOperationByDir(selected, all, (dirFiles, resource) =>
-            p4.edit(resource, { files: dirFiles })
-        );
+        return explorerOperationByDir(selected, all, async (dirFiles, resource) => {
+            const chnum = await resolveChangelistForExplorer(resource);
+            return p4.edit(resource, { chnum, files: dirFiles });
+        });
     }
 
     async function fileAndFolderCount(files: Uri[]) {
