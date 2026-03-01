@@ -120,9 +120,9 @@ class StatusFilter extends FilterItem<ChangelistStatus> {
     constructor(memento: MementoItem<SearchFilterValue<ChangelistStatus>>) {
         super(
             {
-                name: "Status",
-                placeHolder: "Filter by changelist status",
-                defaultText: "all",
+                name: vscode.l10n.t("Status"),
+                placeHolder: vscode.l10n.t("Filter by changelist status"),
+                defaultText: vscode.l10n.t("all"),
             },
             memento
         );
@@ -131,34 +131,34 @@ class StatusFilter extends FilterItem<ChangelistStatus> {
     async chooseValue() {
         const items: PickWithValue<SearchFilterValue<ChangelistStatus>>[] = [
             {
-                label: "$(tools) Pending",
-                description: "Search for pending changelists",
+                label: vscode.l10n.t("$(tools) Pending"),
+                description: vscode.l10n.t("Search for pending changelists"),
                 value: {
-                    label: "pending",
+                    label: vscode.l10n.t("pending"),
                     value: ChangelistStatus.PENDING,
                 },
             },
             {
-                label: "$(check) Submitted",
-                description: "Search for submitted changelists",
+                label: vscode.l10n.t("$(check) Submitted"),
+                description: vscode.l10n.t("Search for submitted changelists"),
                 value: {
-                    label: "submitted",
+                    label: vscode.l10n.t("submitted"),
                     value: ChangelistStatus.SUBMITTED,
                 },
             },
             {
-                label: "$(files) Shelved",
-                description: "Search for shelved changelists",
+                label: vscode.l10n.t("$(files) Shelved"),
+                description: vscode.l10n.t("Search for shelved changelists"),
                 value: {
-                    label: "shelved",
+                    label: vscode.l10n.t("shelved"),
                     value: ChangelistStatus.SHELVED,
                 },
             },
             {
-                label: "$(chrome-close) Reset",
-                description: "Don't filter by changelist status",
+                label: vscode.l10n.t("$(chrome-close) Reset"),
+                description: vscode.l10n.t("Don't filter by changelist status"),
                 value: {
-                    label: "all",
+                    label: vscode.l10n.t("all"),
                     value: undefined,
                 },
             },
@@ -176,7 +176,7 @@ async function showFilterTextInput(
     getSearchResults: (value: string) => Promise<string[]>
 ): Promise<SearchFilterValue<string> | undefined> {
     const value = await vscode.window.showInputBox({
-        prompt: placeHolder + " (use * for wildcards)",
+        prompt: vscode.l10n.t("{0} (use * for wildcards)", placeHolder),
         value: currentValue,
         placeHolder: placeHolder,
     });
@@ -199,7 +199,9 @@ async function showSearchResults(
 ): Promise<SearchFilterValue<string> | undefined> {
     const results = await getSearchResults(filter);
     if (results.length < 1) {
-        Display.showImportantError("No results found for filter " + filter);
+        Display.showImportantError(
+            vscode.l10n.t("No results found for filter {0}", filter)
+        );
         return;
     }
     const items = results.map((item) => {
@@ -227,7 +229,7 @@ async function pickFromProviderOrCustom(
     const current: PickWithValue<SearchFilterValue<string>> | undefined =
         client && clientValue !== undefined
             ? {
-                  label: "$(person) Current " + readableKey,
+                  label: vscode.l10n.t("$(person) Current {0}", readableKey),
                   description: clientValue,
                   value: {
                       label: clientValue ?? "",
@@ -238,15 +240,15 @@ async function pickFromProviderOrCustom(
     const items: PickWithValue<SearchFilterValue<string>>[] = [
         current,
         {
-            label: "$(chrome-close) Reset",
-            description: "Don't filter by " + readableKey,
+            label: vscode.l10n.t("$(chrome-close) Reset"),
+            description: vscode.l10n.t("Don't filter by {0}", readableKey),
             value: {
-                label: "any",
+                label: vscode.l10n.t("any"),
                 value: undefined,
             },
         },
     ].filter(isTruthy);
-    const customDescription = "Type a " + readableKey + " filter";
+    const customDescription = vscode.l10n.t("Type a {0} filter", readableKey);
     const chosen = await showComboBoxInput(
         items,
         { placeHolder, matchOnDescription: true, insertBeforeIndex: 1 },
@@ -255,14 +257,22 @@ async function pickFromProviderOrCustom(
             return [
                 {
                     label: value
-                        ? (isSearch ? "$(search) Search for " : "$(edit) Entered ") +
-                          readableKey +
-                          ": " +
-                          value
-                        : "$(edit) Enter a " + readableKey,
+                        ? isSearch
+                            ? vscode.l10n.t(
+                                  "$(search) Search for {0}: {1}",
+                                  readableKey,
+                                  value
+                              )
+                            : vscode.l10n.t(
+                                  "$(edit) Entered {0}: {1}",
+                                  readableKey,
+                                  value
+                              )
+                        : vscode.l10n.t("$(edit) Enter a {0}", readableKey),
                     description: value ? "" : customDescription,
                     detail: value
-                        ? "\xa0".repeat(4) + "Use * as a wildcard to perform a search"
+                        ? "\xa0".repeat(4) +
+                          vscode.l10n.t("Use * as a wildcard to perform a search")
                         : "",
                     alwaysShow: true,
                     value: {
@@ -276,7 +286,7 @@ async function pickFromProviderOrCustom(
 
     if (chosen?.description === customDescription && !chosen.value?.value) {
         return showFilterTextInput(
-            "Enter a " + readableKey,
+            vscode.l10n.t("Enter a {0}", readableKey),
             currentValue ?? "",
             getSearchResults
         );
@@ -294,9 +304,9 @@ class UserFilter extends FilterItem<string> {
     constructor(private _provider: ProviderSelection, memento: StringMemento) {
         super(
             {
-                name: "User",
-                placeHolder: "Filter by username",
-                defaultText: "any",
+                name: vscode.l10n.t("User"),
+                placeHolder: vscode.l10n.t("Filter by username"),
+                defaultText: vscode.l10n.t("any"),
             },
             memento
         );
@@ -312,7 +322,7 @@ class UserFilter extends FilterItem<string> {
             this.value,
             client,
             client.userName,
-            "user",
+            vscode.l10n.t("user"),
             async (value) => {
                 const users = await p4.users(client.configSource, {
                     max: 200,
@@ -328,9 +338,9 @@ class ClientFilter extends FilterItem<string> {
     constructor(private _provider: ProviderSelection, memento: StringMemento) {
         super(
             {
-                name: "Client",
-                placeHolder: "Filter by perforce client",
-                defaultText: "any",
+                name: vscode.l10n.t("Client"),
+                placeHolder: vscode.l10n.t("Filter by perforce client"),
+                defaultText: vscode.l10n.t("any"),
             },
             memento
         );
@@ -346,7 +356,7 @@ class ClientFilter extends FilterItem<string> {
             this.value,
             this._provider.client,
             this._provider.client?.clientName,
-            "perforce client",
+            vscode.l10n.t("perforce client"),
             async (value) => {
                 const clients = await p4.clients(client.configSource, {
                     max: 200,
@@ -373,10 +383,12 @@ export class FileFilterValue extends SelfExpandingTreeItem<any> {
 
     async edit() {
         const value = await vscode.window.showInputBox({
-            prompt: "Enter a local file or depot path. Use '...' for wildcards",
+            prompt: vscode.l10n.t(
+                "Enter a local file or depot path. Use '...' for wildcards"
+            ),
             validateInput: (val) => {
                 if (val.trim() === "") {
-                    return "Please enter a value";
+                    return vscode.l10n.t("Please enter a value");
                 }
             },
             value: this.labelText,
@@ -390,7 +402,7 @@ export class FileFilterValue extends SelfExpandingTreeItem<any> {
 
 class FileFilterAdd extends SelfExpandingTreeItem<any> {
     constructor(private _command: vscode.Command) {
-        super("Add path...");
+        super(vscode.l10n.t("Add path..."));
     }
 
     get command() {
@@ -410,15 +422,15 @@ export class FileFilterRoot extends SelfExpandingTreeItem<
         private _provider: ProviderSelection,
         private _memento: MementoItem<string[]>
     ) {
-        super("Files", vscode.TreeItemCollapsibleState.Expanded, {
+        super(vscode.l10n.t("Files"), vscode.TreeItemCollapsibleState.Expanded, {
             reverseChildren: true,
         });
-        this.description = "Any of the following paths:";
+        this.description = vscode.l10n.t("Any of the following paths:");
         this.addChild(
             new FileFilterAdd({
                 command: "perforce.changeSearch.addFileFilter",
                 arguments: [this],
-                title: "Add file filter",
+                title: vscode.l10n.t("Add file filter"),
             })
         );
         this._didChangeFilter = new vscode.EventEmitter();
@@ -471,10 +483,12 @@ export class FileFilterRoot extends SelfExpandingTreeItem<
     private async enterCustomValue() {
         const clipPath = await this.getFilePathFromClipboard();
         const value = await vscode.window.showInputBox({
-            prompt: "Enter a local file or depot path. Use '...' for wildcards",
+            prompt: vscode.l10n.t(
+                "Enter a local file or depot path. Use '...' for wildcards"
+            ),
             validateInput: (val) => {
                 if (val.trim() === "") {
-                    return "Please enter a value";
+                    return vscode.l10n.t("Please enter a value");
                 }
             },
             value: clipPath ?? this.getOpenFilePath() ?? this.getClientConfigSourcePath(),
@@ -491,12 +505,12 @@ export class FileFilterRoot extends SelfExpandingTreeItem<
             Path.dirname(filePath) + (filePath.startsWith("/") ? "/" : Path.sep) + "...";
         return [
             {
-                label: "Current Editor File",
+                label: vscode.l10n.t("Current Editor File"),
                 description: filePath,
                 value: filePath,
             },
             {
-                label: "Current File's Folder",
+                label: vscode.l10n.t("Current File's Folder"),
                 description: fileWildcard,
                 value: fileWildcard,
             },
@@ -507,7 +521,7 @@ export class FileFilterRoot extends SelfExpandingTreeItem<
         const rootPath = this.getClientRootPath();
         const clientRoot: PickWithValue<string> | undefined = rootPath
             ? {
-                  label: "Client Root",
+                  label: vscode.l10n.t("Client Root"),
                   description: rootPath,
                   value: rootPath,
               }
@@ -516,7 +530,7 @@ export class FileFilterRoot extends SelfExpandingTreeItem<
         const clientSource: PickWithValue<string> | undefined =
             sourcePath && rootPath !== sourcePath
                 ? {
-                      label: "Workspace location",
+                      label: vscode.l10n.t("Workspace location"),
                       description: sourcePath,
                       value: sourcePath,
                   }
@@ -530,20 +544,22 @@ export class FileFilterRoot extends SelfExpandingTreeItem<
                     !existingChildren.some((existing) => existing.label === opt.value)
             );
 
-        const customDescription = "Type a path";
+        const customDescription = vscode.l10n.t("Type a path");
         const chosen = await showComboBoxInput(
             options,
             {
                 matchOnDescription: true,
-                placeHolder: "Filter by a depot or file path",
+                placeHolder: vscode.l10n.t("Filter by a depot or file path"),
             },
             (value) => {
                 return [
                     {
-                        label: value ? "Entered path: " + value : "Enter a path",
+                        label: value
+                            ? vscode.l10n.t("Entered path: {0}", value)
+                            : vscode.l10n.t("Enter a path"),
                         description: value ? "" : customDescription,
                         detail: value
-                            ? "\xa0".repeat(4) + "Use ... for wildcards"
+                            ? "\xa0".repeat(4) + vscode.l10n.t("Use ... for wildcards")
                             : undefined,
                         alwaysShow: true,
                         value: value,
@@ -630,7 +646,7 @@ export class FilterRootItem extends SelfExpandingTreeItem<any> {
     }
 
     constructor(provider: ProviderSelection, memento: vscode.Memento) {
-        super("Filters", vscode.TreeItemCollapsibleState.Expanded);
+        super(vscode.l10n.t("Filters"), vscode.TreeItemCollapsibleState.Expanded);
         this._statusFilter = new StatusFilter(
             new MementoItem(MementoKeys.SEARCH_STATUS, memento)
         );
@@ -693,13 +709,13 @@ export class FilterRootItem extends SelfExpandingTreeItem<any> {
 export function makeFilterLabelText(filters: Filters, resultCount: number) {
     const parts = [
         filters.status ? filters.status : undefined,
-        filters.user ? "User: " + filters.user : undefined,
-        filters.client ? "Client: " + filters.client : undefined,
+        filters.user ? vscode.l10n.t("User: {0}", filters.user) : undefined,
+        filters.client ? vscode.l10n.t("Client: {0}", filters.client) : undefined,
         filters.files && filters.files.length > 0
             ? pluralise(filters.files.length, "path")
             : undefined,
     ].filter(isTruthy);
-    const filterText = parts.length > 0 ? parts.join("] [") : "no filters";
+    const filterText = parts.length > 0 ? parts.join("] [") : vscode.l10n.t("no filters");
     return (
         "(" +
         pluralise(resultCount, "result", configAccessor.changelistSearchMaxResults) +

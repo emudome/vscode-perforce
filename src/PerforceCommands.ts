@@ -2,6 +2,7 @@
 
 import {
     commands,
+    l10n,
     workspace,
     window,
     Uri,
@@ -100,7 +101,7 @@ export namespace PerforceCommands {
     export async function p4add(fileUri: Uri) {
         try {
             await p4.add(fileUri, { files: [fileUri] });
-            Display.showMessage("File opened for add");
+            Display.showMessage(l10n.t("File opened for add"));
             Display.updateEditor();
         } catch {}
         PerforceSCMProvider.RefreshAll();
@@ -129,7 +130,7 @@ export namespace PerforceCommands {
                 await window.withProgress(
                     {
                         location: ProgressLocation.Notification,
-                        title: "Perforce: Opening file for edit",
+                        title: l10n.t("Perforce: Opening file for edit"),
                     },
                     () => p4edit(activeFile.uri)
                 );
@@ -145,7 +146,7 @@ export namespace PerforceCommands {
     export async function p4edit(fileUri: Uri) {
         try {
             await p4.edit(fileUri, { files: [fileUri] });
-            Display.showMessage("File opened for edit");
+            Display.showMessage(l10n.t("File opened for edit"));
             Display.updateEditor();
         } catch {}
         PerforceSCMProvider.RefreshAll();
@@ -169,7 +170,9 @@ export namespace PerforceCommands {
         const deleteOpts: p4.DeleteOptions = { paths: [fileUri] };
         try {
             await p4.del(resource ?? fileUri, deleteOpts);
-            Display.showMessage(PerforceUri.fsPathWithoutRev(fileUri) + " deleted.");
+            Display.showMessage(
+                l10n.t("{0} deleted.", PerforceUri.fsPathWithoutRev(fileUri))
+            );
             Display.updateEditor();
             PerforceSCMProvider.RefreshAll();
         } catch (err) {
@@ -192,8 +195,8 @@ export namespace PerforceCommands {
 
         const filename = PerforceUri.basenameWithoutRev(fileUri);
         const ok = await Display.requestConfirmation(
-            "Are you sure you want to revert " + filename + "?",
-            "Revert " + filename
+            l10n.t("Are you sure you want to revert {0}?", filename),
+            l10n.t("Revert {0}", filename)
         );
 
         if (ok) {
@@ -205,7 +208,9 @@ export namespace PerforceCommands {
         const revertOpts: p4.RevertOptions = { paths: [fileUri] };
         try {
             await p4.revert(resource ?? fileUri, revertOpts);
-            Display.showMessage(PerforceUri.basenameWithoutRev(fileUri) + " reverted.");
+            Display.showMessage(
+                l10n.t("{0} reverted.", PerforceUri.basenameWithoutRev(fileUri))
+            );
             Display.updateEditor();
             PerforceSCMProvider.RefreshAll();
         } catch (err) {
@@ -222,24 +227,24 @@ export namespace PerforceCommands {
     export async function submitSingle() {
         const file = window.activeTextEditor?.document.uri;
         if (!file || file.scheme !== "file") {
-            Display.showError("No open file to submit");
+            Display.showError(l10n.t("No open file to submit"));
             return;
         }
 
         if (window.activeTextEditor?.document.isDirty) {
             Display.showModalMessage(
-                "The active document has unsaved changes. Save the file first!"
+                l10n.t("The active document has unsaved changes. Save the file first!")
             );
             return;
         }
         const description = await window.showInputBox({
-            prompt:
-                "Enter a changelist description to submit '" +
-                PerforceUri.fsPathWithoutRev(file) +
-                "'",
+            prompt: l10n.t(
+                "Enter a changelist description to submit '{0}'",
+                PerforceUri.fsPathWithoutRev(file)
+            ),
             validateInput: (input) => {
                 if (!input.trim()) {
-                    return "Description must not be empty";
+                    return l10n.t("Description must not be empty");
                 }
             },
         });
@@ -250,7 +255,7 @@ export namespace PerforceCommands {
         const output = await p4.submitChangelist(file, { description, file });
         didChangeHaveRev(file);
         PerforceSCMProvider.RefreshAll();
-        Display.showMessage("Changelist " + output.chnum + " submitted");
+        Display.showMessage(l10n.t("Changelist {0} submitted", output.chnum ?? ""));
     }
 
     async function pickRevision(uri: Uri, placeHolder: string) {
@@ -264,7 +269,7 @@ export namespace PerforceCommands {
             .filter((rev, _i, arr) => rev.file === arr[0].file) // ignore pre-renamed files
             .map((rev) => {
                 return {
-                    label: `#${rev.revision} change: ${rev.chnum}`,
+                    label: l10n.t("#{0} change: {1}", rev.revision, rev.chnum),
                     description: rev.description,
                     item: rev,
                 };
@@ -284,13 +289,13 @@ export namespace PerforceCommands {
     export async function syncOpenFile() {
         const file = window.activeTextEditor?.document.uri;
         if (!file || file.scheme !== "file") {
-            Display.showError("No open file to sync");
+            Display.showError(l10n.t("No open file to sync"));
             return;
         }
 
         try {
             await p4.sync(file, { files: [file] });
-            Display.showMessage("File Synced");
+            Display.showMessage(l10n.t("File Synced"));
             didChangeHaveRev(file);
         } catch {}
         PerforceSCMProvider.RefreshAll();
@@ -299,11 +304,11 @@ export namespace PerforceCommands {
     export async function syncOpenFileRevision() {
         const file = window.activeTextEditor?.document.uri;
         if (!file || file.scheme !== "file") {
-            Display.showError("No open file to sync");
+            Display.showError(l10n.t("No open file to sync"));
             return;
         }
 
-        const revision = await pickRevision(file, "Choose a revision to sync");
+        const revision = await pickRevision(file, l10n.t("Choose a revision to sync"));
 
         if (revision) {
             const chosen = PerforceUri.fromDepotPath(
@@ -313,7 +318,7 @@ export namespace PerforceCommands {
             );
             try {
                 await p4.sync(file, { files: [chosen] });
-                Display.showMessage("File Synced");
+                Display.showMessage(l10n.t("File Synced"));
                 didChangeHaveRev(file);
             } catch {}
             PerforceSCMProvider.RefreshAll();
@@ -333,7 +338,7 @@ export namespace PerforceCommands {
             file,
             files,
             (dirFiles, resource) => p4.sync(resource, { files: dirFiles }),
-            { message: "Sync complete", hideSubErrors: true }
+            { message: l10n.t("Sync complete"), hideSubErrors: true }
         );
     }
 
@@ -378,12 +383,17 @@ export namespace PerforceCommands {
         const differentDir = files.find((file) => Path.dirname(file.fsPath) !== dirname);
         if (differentDir) {
             Display.showModalMessage(
-                "To move multiple files, all moved files must be within the same folder"
+                l10n.t(
+                    "To move multiple files, all moved files must be within the same folder"
+                )
             );
             return;
         }
         const newPath = await window.showInputBox({
-            prompt: "Enter the new location for the " + files.length + " selected files",
+            prompt: l10n.t(
+                "Enter the new location for the {0} selected files",
+                files.length
+            ),
             value: dirname,
             placeHolder: dirname,
             valueSelection: getDirSelectionRange(dirname),
@@ -408,7 +418,7 @@ export namespace PerforceCommands {
 
     async function moveRenameSingleFileOrDir(file: Uri, openInEditor?: boolean) {
         const newPath = await window.showInputBox({
-            prompt: "Enter the new path for " + Path.basename(file.fsPath),
+            prompt: l10n.t("Enter the new path for {0}", Path.basename(file.fsPath)),
             value: file.fsPath,
             placeHolder: file.fsPath,
             valueSelection: getDirSelectionRange(file.fsPath),
@@ -498,7 +508,7 @@ export namespace PerforceCommands {
 
         try {
             await withExplorerProgress(() => Promise.all(promises));
-            Display.showMessage(options?.message ?? "Operation complete");
+            Display.showMessage(options?.message ?? l10n.t("Operation complete"));
         } catch (err) {}
         PerforceSCMProvider.RefreshAll();
         Display.updateEditor();
@@ -522,7 +532,9 @@ export namespace PerforceCommands {
         const fileCount = files.length - dirCount;
         const items = [
             fileCount > 0 ? pluralise(fileCount, "file") : undefined,
-            dirCount > 0 ? "ALL FILES in " + pluralise(dirCount, "folder") : undefined,
+            dirCount > 0
+                ? l10n.t("ALL FILES in {0}", pluralise(dirCount, "folder"))
+                : undefined,
         ].filter(isTruthy);
         return items.join(", and ");
     }
@@ -531,8 +543,8 @@ export namespace PerforceCommands {
         const allFiles = consolidateUris(selected, all);
         const allPlural = await fileAndFolderCount(allFiles);
         const ok = await Display.requestConfirmation(
-            "Are you sure you want to revert " + allPlural + "?",
-            "Revert " + allPlural
+            l10n.t("Are you sure you want to revert {0}?", allPlural),
+            l10n.t("Revert {0}", allPlural)
         );
         if (ok) {
             await explorerOperationByDir(
@@ -558,10 +570,11 @@ export namespace PerforceCommands {
         const allFiles = consolidateUris(selected, all);
         const allPlural = await fileAndFolderCount(allFiles);
         const ok = await Display.requestConfirmation(
-            "Are you sure you want to delete " +
-                allPlural +
-                "?\nThis operation does not revert open files",
-            "Delete " + allPlural
+            l10n.t(
+                "Are you sure you want to delete {0}?\nThis operation does not revert open files",
+                allPlural
+            ),
+            l10n.t("Delete {0}", allPlural)
         );
         if (ok) {
             await explorerOperationByDir(selected, all, (dirFiles, resource) =>
@@ -573,7 +586,7 @@ export namespace PerforceCommands {
     export async function moveOpenFile() {
         const file = window.activeTextEditor?.document.uri;
         if (!file || file.scheme !== "file") {
-            Display.showError("No open file to sync");
+            Display.showError(l10n.t("No open file to sync"));
             return;
         }
 
@@ -626,7 +639,10 @@ export namespace PerforceCommands {
 
         const doc = editor.document;
 
-        const revision = await pickRevision(doc.uri, "Choose a revision to diff against");
+        const revision = await pickRevision(
+            doc.uri,
+            l10n.t("Choose a revision to diff against")
+        );
         if (revision) {
             diff(parseInt(revision.revision));
         }
@@ -637,7 +653,7 @@ export namespace PerforceCommands {
             fromDoc = window.activeTextEditor?.document.uri;
         }
         if (!fromDoc) {
-            Display.showError("No file to diff");
+            Display.showError(l10n.t("No file to diff"));
             return false;
         }
         await DiffProvider.diffPrevious(fromDoc);
@@ -646,7 +662,7 @@ export namespace PerforceCommands {
     async function diffPreviousFromDiff() {
         const fromDoc = window.activeTextEditor?.document.uri;
         if (!fromDoc) {
-            Display.showError("No file to diff");
+            Display.showError(l10n.t("No file to diff"));
             return false;
         }
         await DiffProvider.diffPrevious(fromDoc, true);
@@ -657,7 +673,7 @@ export namespace PerforceCommands {
             fromDoc = window.activeTextEditor?.document.uri;
         }
         if (!fromDoc) {
-            Display.showError("No file to diff");
+            Display.showError(l10n.t("No file to diff"));
             return false;
         }
         await DiffProvider.diffNext(fromDoc);
@@ -685,7 +701,7 @@ export namespace PerforceCommands {
         // DO NOT USE URI from vscode command - only returns the right uri - we need the active editor
         const fromDoc = window.activeTextEditor?.document.uri;
         if (!fromDoc) {
-            Display.showError("No document selected");
+            Display.showError(l10n.t("No document selected"));
             return;
         }
         await QuickPicks.showQuickPickForFile(fromDoc);
@@ -701,7 +717,7 @@ export namespace PerforceCommands {
             {
                 location: ProgressLocation.Window,
                 cancellable: false,
-                title: "Generating annotations",
+                title: l10n.t("Generating annotations"),
             },
             () => AnnotationProvider.annotate(uri)
         );
@@ -877,56 +893,62 @@ export namespace PerforceCommands {
         const items: QuickPickItem[] = [];
         items.push({
             label: "add",
-            description: "Open a new file to add it to the depot",
+            description: l10n.t("Open a new file to add it to the depot"),
         });
-        items.push({ label: "edit", description: "Open an existing file for edit" });
+        items.push({
+            label: "edit",
+            description: l10n.t("Open an existing file for edit"),
+        });
         items.push({
             label: "revert",
-            description: "Discard changes from an opened file",
+            description: l10n.t("Discard changes from an opened file"),
         });
         items.push({
             label: "submit single file",
-            description: "Submit the open file, ONLY if it is in the default changelist",
+            description: l10n.t(
+                "Submit the open file, ONLY if it is in the default changelist"
+            ),
         });
         items.push({
             label: "move",
-            description: "Move or rename the open file",
+            description: l10n.t("Move or rename the open file"),
         });
         items.push({
             label: "sync file",
-            description: "Sync the file to the latest revision",
+            description: l10n.t("Sync the file to the latest revision"),
         });
         items.push({
             label: "sync revision",
-            description: "Choose a revision to sync",
+            description: l10n.t("Choose a revision to sync"),
         });
         items.push({
             label: "diff",
-            description: "Display diff of client file with depot file",
+            description: l10n.t("Display diff of client file with depot file"),
         });
         items.push({
             label: "diffRevision",
-            description:
-                "Display diff of client file with depot file at a specific revision",
+            description: l10n.t(
+                "Display diff of client file with depot file at a specific revision"
+            ),
         });
         items.push({
             label: "annotate",
-            description: "Print file lines and their revisions",
+            description: l10n.t("Print file lines and their revisions"),
         });
         items.push({
             label: "history",
-            description: "Show file history",
+            description: l10n.t("Show file history"),
         });
         items.push({
             label: "opened",
-            description: "View 'open' files and open one in editor",
+            description: l10n.t("View 'open' files and open one in editor"),
         });
-        items.push({ label: "login", description: "Log in to Perforce" });
-        items.push({ label: "logout", description: "Log out from Perforce" });
+        items.push({ label: "login", description: l10n.t("Log in to Perforce") });
+        items.push({ label: "logout", description: l10n.t("Log out from Perforce") });
         window
             .showQuickPick(items, {
                 matchOnDescription: true,
-                placeHolder: "Choose a Perforce command:",
+                placeHolder: l10n.t("Choose a Perforce command:"),
             })
             .then(function (selection) {
                 if (selection === undefined) {
@@ -983,7 +1005,7 @@ export namespace PerforceCommands {
 
     function checkFileSelected() {
         if (!window.activeTextEditor) {
-            Display.showMessage("No file selected");
+            Display.showMessage(l10n.t("No file selected"));
             return false;
         }
 
@@ -992,7 +1014,7 @@ export namespace PerforceCommands {
 
     export function checkFolderOpened() {
         if (workspace.workspaceFolders === undefined) {
-            Display.showMessage("No folder selected");
+            Display.showMessage(l10n.t("No folder selected"));
             return false;
         }
 

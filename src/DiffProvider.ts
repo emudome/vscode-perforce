@@ -1,4 +1,4 @@
-import { commands, window, Uri, workspace } from "vscode";
+import { commands, window, Uri, workspace, l10n } from "vscode";
 import { Resource } from "./scm/Resource";
 import { Status } from "./scm/Status";
 import { FileType } from "./scm/FileTypes";
@@ -49,7 +49,7 @@ export function getPathsWithoutCommonPrefix(a: string, b: string): [string, stri
 
 function pathWithRev(path: string, revOrAtLabel: string, couldBeWorkspace?: boolean) {
     if (!revOrAtLabel) {
-        return couldBeWorkspace ? path + " (workspace)" : path;
+        return couldBeWorkspace ? path + l10n.t(" (workspace)") : path;
     }
     if (isNaN(parseInt(revOrAtLabel))) {
         return path + revOrAtLabel;
@@ -145,12 +145,12 @@ function getPreviousUri(fromUri: Uri) {
  */
 async function diffPreviousFrom(rightUri?: Uri) {
     if (!rightUri) {
-        Display.showImportantError("No previous revision available");
+        Display.showImportantError(l10n.t("No previous revision available"));
         return;
     }
     const leftUri = getPreviousUri(rightUri);
     if (!leftUri) {
-        Display.showImportantError("No previous revision available");
+        Display.showImportantError(l10n.t("No previous revision available"));
         return;
     }
     await diffFiles(leftUri, rightUri);
@@ -162,7 +162,7 @@ async function diffPreviousFrom(rightUri?: Uri) {
 async function diffPreviousFromWorking(fromDoc: Uri, fromDiffEditor?: boolean) {
     const leftUri = (await p4.have(fromDoc, { file: fromDoc }))?.depotUri;
     if (!leftUri) {
-        Display.showImportantError("No previous revision available");
+        Display.showImportantError(l10n.t("No previous revision available"));
         return;
     }
     const leftWithRev = PerforceUri.withArgs(leftUri, {
@@ -244,7 +244,7 @@ export async function diffPrevious(fromDoc: Uri, fromDiffEditor?: boolean) {
 export async function diffNext(fromDoc: Uri) {
     const rev = parseInt(PerforceUri.getRevOrAtLabel(fromDoc));
     if (isNaN(rev)) {
-        Display.showImportantError("No more revisions available");
+        Display.showImportantError(l10n.t("No more revisions available"));
         return;
     }
 
@@ -353,7 +353,7 @@ function getLeftResource(
                 return {
                     title: resource.fromFile
                         ? PerforceUri.basenameWithRev(resource.fromFile)
-                        : "Depot Version",
+                        : l10n.t("Depot Version"),
                     uri: resource.fromFile ?? emptyDoc,
                 };
             case Status.INTEGRATE:
@@ -409,10 +409,10 @@ function getTitle(resource: Resource, leftTitle: string, diffType: DiffType): st
             text = leftTitle + " ⟷ " + basenameWithRev;
             break;
         case DiffType.WORKSPACE_V_SHELVE:
-            text = leftTitle + " ⟷ " + basename + " (workspace)";
+            text = leftTitle + " ⟷ " + basename + l10n.t(" (workspace)");
             break;
         case DiffType.WORKSPACE_V_DEPOT:
-            text = leftTitle + " ⟷ " + basename + " (workspace)";
+            text = leftTitle + " ⟷ " + basename + l10n.t(" (workspace)");
     }
     return text;
 }

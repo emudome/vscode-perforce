@@ -10,7 +10,7 @@ import { Utils } from "./Utils";
 import * as vscode from "vscode";
 import * as Path from "path";
 
-import { Disposable } from "vscode";
+import { Disposable, l10n } from "vscode";
 import { AnnotationProvider } from "./annotations/AnnotationProvider";
 import * as ContextVars from "./ContextVars";
 import * as QuickPicks from "./quickPick/QuickPicks";
@@ -150,12 +150,13 @@ async function warnAboutP4Config(numFiles: number) {
         return;
     }
 
-    const ignore = "Don't show again in this workspace";
-    const moreDetails = "More Details...";
+    const ignore = l10n.t("Don't show again in this workspace");
+    const moreDetails = l10n.t("More Details...");
     const result = await vscode.window.showWarningMessage(
-        "Perforce WARNING: Your workspace contains " +
-            numFiles +
-            " .p4config file(s), but your P4CONFIG setting is undefined. Please set P4CONFIG in your environment and restart VS Code to detect these perforce clients",
+        l10n.t(
+            "Perforce WARNING: Your workspace contains {0} .p4config file(s), but your P4CONFIG setting is undefined. Please set P4CONFIG in your environment and restart VS Code to detect these perforce clients",
+            numFiles
+        ),
         ignore,
         moreDetails
     );
@@ -450,10 +451,12 @@ async function checkForSlevesque(ctx: vscode.ExtensionContext) {
     }
     const ext = vscode.extensions.getExtension("slevesque.perforce");
     if (ext) {
-        const ignore = "Don't show again";
-        const showExts = "Show installed extensions";
+        const ignore = l10n.t("Don't show again");
+        const showExts = l10n.t("Show installed extensions");
         const chosen = await vscode.window.showWarningMessage(
-            "You have both slevesque.perforce and mjcrouch.perforce installed. These extensions *cannot* be used together. Please uninstall or disable slevesque.perforce in order to use the fork",
+            l10n.t(
+                "You have both slevesque.perforce and mjcrouch.perforce installed. These extensions *cannot* be used together. Please uninstall or disable slevesque.perforce in order to use the fork"
+            ),
             showExts,
             ignore
         );
@@ -607,9 +610,11 @@ function onDidChangeConfiguration(event: vscode.ConfigurationChangeEvent) {
             settingsRequiringRestart,
             async () => {
                 didShowConfigWarning = true;
-                const restart = "Restart Now";
+                const restart = l10n.t("Restart Now");
                 const answer = await vscode.window.showWarningMessage(
-                    "You have changed a perforce setting that may require a restart to take effect. When you are done, please restart VS Code",
+                    l10n.t(
+                        "You have changed a perforce setting that may require a restart to take effect. When you are done, please restart VS Code"
+                    ),
                     restart
                 );
                 if (answer === restart) {
@@ -785,9 +790,11 @@ function onDidCloseTextDocument(event: vscode.TextDocument) {
 }
 
 async function clearMementos() {
-    const ok = "Clear workspace state";
+    const ok = l10n.t("Clear workspace state");
     const choice = await vscode.window.showWarningMessage(
-        "This will clear persisted cache data. This only applies to a small number of items such as search filters and change specifications.\nThis option is only here in case of unexpected bugs.\nYou will probably need to restart VS Code to see any effect. Continue?",
+        l10n.t(
+            "This will clear persisted cache data. This only applies to a small number of items such as search filters and change specifications.\nThis option is only here in case of unexpected bugs.\nYou will probably need to restart VS Code to see any effect. Continue?"
+        ),
         { modal: true },
         ok
     );

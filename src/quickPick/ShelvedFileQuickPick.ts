@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { l10n } from "vscode";
 
 import * as PerforceUri from "../PerforceUri";
 import * as p4 from "../api/PerforceApi";
@@ -36,10 +37,9 @@ export const shelvedFileQuickPickProvider: qp.ActionableQuickPickProvider = {
         const have = await p4.have(resource, { file: depotUri });
         const actions = await makeDiffPicks(resource, depotUri, operation, have, change);
         actions.push({
-            label: "$(list-flat) Go to changelist details",
+            label: l10n.t("$(list-flat) Go to changelist details"),
             description:
-                "Change " +
-                change.chnum +
+                l10n.t("Change {0}", change.chnum) +
                 nbsp +
                 " $(book) " +
                 nbsp +
@@ -80,12 +80,10 @@ export async function showQuickPickForShelvedFile(
 }
 
 function makeShelvedFileSummary(depotPath: string, changeInfo: p4.ChangeInfo) {
-    return (
-        "Shelved File " +
-        depotPath +
-        "@=" +
-        changeInfo.chnum +
-        " - " +
+    return l10n.t(
+        "Shelved File {0}@={1} - {2}",
+        depotPath,
+        changeInfo.chnum,
         changeInfo.description.join(" ")
     );
 }
@@ -125,16 +123,16 @@ async function makeDiffPicks(
             : undefined;
     return [
         {
-            label: "$(file) Show shelved file",
-            description: "Open the shelved file in the editor",
+            label: l10n.t("$(file) Show shelved file"),
+            description: l10n.t("Open the shelved file in the editor"),
             performAction: () => {
                 vscode.window.showTextDocument(shelvedUri);
             },
         },
         have
             ? {
-                  label: "$(file) Open workspace file",
-                  description: "Open the local file in the editor",
+                  label: l10n.t("$(file) Open workspace file"),
+                  description: l10n.t("Open the local file in the editor"),
                   performAction: () => {
                       vscode.window.showTextDocument(have.localUri);
                   },
@@ -142,7 +140,7 @@ async function makeDiffPicks(
             : undefined,
         !operationCreatesFile(status)
             ? {
-                  label: "$(diff) Diff against source revision",
+                  label: l10n.t("$(diff) Diff against source revision"),
                   description: DiffProvider.diffTitleForDepotPaths(
                       operation.depotPath,
                       operation.revision,
@@ -154,7 +152,7 @@ async function makeDiffPicks(
             : undefined,
         movedFrom
             ? {
-                  label: "$(diff) Diff against moved-from revision",
+                  label: l10n.t("$(diff) Diff against moved-from revision"),
                   description: DiffProvider.diffTitleForDepotPaths(
                       PerforceUri.getDepotPathFromDepotUri(movedFrom),
                       PerforceUri.getRevOrAtLabel(movedFrom),
@@ -166,8 +164,8 @@ async function makeDiffPicks(
             : undefined,
         // TODO e.g. move / add diff against deleted file - need fstat for that
         {
-            label: "$(diff) Diff against workspace file",
-            description: have ? "" : "No matching workspace file found",
+            label: l10n.t("$(diff) Diff against workspace file"),
+            description: have ? "" : l10n.t("No matching workspace file found"),
             performAction: have
                 ? () => {
                       DiffProvider.diffFiles(shelvedUri, have.localUri);
@@ -176,14 +174,14 @@ async function makeDiffPicks(
         },
         !operationCreatesFile(status)
             ? {
-                  label: "$(list-flat) Go to source revision",
+                  label: l10n.t("$(list-flat) Go to source revision"),
                   description: PerforceUri.fsPathWithoutRev(uri),
                   performAction: () => showQuickPickForFile(uri),
               }
             : undefined,
         movedFrom
             ? {
-                  label: "$(list-flat) Go to moved-from revision",
+                  label: l10n.t("$(list-flat) Go to moved-from revision"),
                   description:
                       PerforceUri.basenameWithoutRev(movedFrom) +
                       "#" +

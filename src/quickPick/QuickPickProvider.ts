@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { l10n } from "vscode";
 import { isTruthy } from "../TsUtils";
 import { Display } from "../Display";
 import * as PerforceUri from "../PerforceUri";
@@ -45,7 +46,7 @@ export function registerQuickPickProvider(
     registeredQuickPickProviders.set(type, provider);
 }
 
-const backLabel = "$(discard) Go Back";
+const backLabel = l10n.t("$(discard) Go Back");
 
 export function openLastQuickPick() {
     const prev = quickPickStack[quickPickStack.length - 1];
@@ -53,7 +54,7 @@ export function openLastQuickPick() {
         quickPickStack.pop();
         showQuickPick(prev.type, ...prev.args);
     } else {
-        Display.showImportantError("No previous quick pick available");
+        Display.showImportantError(l10n.t("No previous quick pick available"));
     }
 }
 
@@ -74,7 +75,7 @@ export async function chooseRecentQuickPick() {
     });
 
     const chosen = await vscode.window.showQuickPick(items, {
-        placeHolder: "Choose a recent quick pick to open",
+        placeHolder: l10n.t("Choose a recent quick pick to open"),
         matchOnDescription: true,
     });
 
@@ -89,14 +90,14 @@ function makeStackActions(): ActionableQuickPickItem[] {
         prev
             ? {
                   label: backLabel,
-                  description: "to " + prev.description,
+                  description: l10n.t("to {0}", prev.description),
                   performAction: () => {
                       openLastQuickPick();
                   },
               }
             : {
                   label: backLabel,
-                  description: "n/a",
+                  description: l10n.t("n/a"),
               },
     ].filter(isTruthy);
 }
@@ -108,7 +109,7 @@ export async function showQuickPick(type: string, ...args: any[]) {
         const actions = await vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Window,
-                title: "Getting actions for quick pick",
+                title: l10n.t("Getting actions for quick pick"),
                 cancellable: false,
             },
             () => provider.provideActions(...args)
@@ -173,11 +174,11 @@ export function makeClipPick(
 ): ActionableQuickPickItem {
     const val = value ?? "";
     return {
-        label: "$(clippy) Copy " + name + " to clipboard",
+        label: l10n.t("$(clippy) Copy {0} to clipboard", name),
         description: val,
         performAction: (reopen) => {
             vscode.env.clipboard.writeText(val);
-            vscode.window.setStatusBarMessage("Copied to clipboard");
+            vscode.window.setStatusBarMessage(l10n.t("Copied to clipboard"));
             reopen();
         },
     };

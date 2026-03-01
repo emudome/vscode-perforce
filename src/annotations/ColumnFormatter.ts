@@ -1,5 +1,6 @@
 import * as p4 from "../api/PerforceApi";
 
+import { l10n } from "vscode";
 import { timeAgo } from "../DateFormatter";
 import { Display } from "../Display";
 import { isTruthy } from "../TsUtils";
@@ -40,7 +41,7 @@ export function parseColumn(item: string): ColumnOption | undefined {
         };
     } else {
         Display.showImportantError(
-            item + " is not a valid column format. Skipping this column"
+            l10n.t("{0} is not a valid column format. Skipping this column", item)
         );
     }
 }
@@ -65,7 +66,8 @@ const behaviors: ColumnBehaviors = {
         value: (change) => replaceWhitespace(change.description),
     },
     timeAgo: {
-        value: (change) => (change.date ? timeAgo.format(change.date) : "Unknown"),
+        value: (change) =>
+            change.date ? timeAgo.format(change.date) : l10n.t("Unknown"),
     },
 };
 

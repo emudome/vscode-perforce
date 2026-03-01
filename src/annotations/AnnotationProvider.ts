@@ -262,10 +262,11 @@ export class AnnotationProvider {
 
         if (notFound.length > 0) {
             Display.showImportantError(
-                "Error during annotation - could not find change information for " +
-                    pluralise(notFound.length, "change") +
-                    ": " +
+                vscode.l10n.t(
+                    "Error during annotation - could not find change information for {0}: {1}",
+                    pluralise(notFound.length, "change"),
                     notFound.join(", ")
+                )
             );
         }
 

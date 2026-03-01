@@ -4,6 +4,7 @@ import {
     SourceControlResourceDecorations,
     Uri,
     workspace,
+    l10n,
 } from "vscode";
 import { DecorationProvider } from "./DecorationProvider";
 import { GetStatuses, Status } from "./Status";
@@ -143,7 +144,7 @@ export class Resource implements SourceControlResourceState {
             ? "perforce.openResource"
             : "perforce.openFile";
         return {
-            title: "Open",
+            title: l10n.t("Open"),
             command,
             arguments: [this],
         };

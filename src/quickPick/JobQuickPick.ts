@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { l10n } from "vscode";
 
 import * as PerforceUri from "../PerforceUri";
 import * as p4 from "../api/PerforceApi";
@@ -19,7 +20,7 @@ export const jobQuickPickProvider: qp.ActionableQuickPickProvider = {
         const resource = qp.asUri(resourceOrStr);
         const jobInfo = await p4.getJob(resource, { existingJob: job });
         if (jobInfo.description === "<enter description here>") {
-            Display.showImportantError("Job " + job + " does not exist");
+            Display.showImportantError(l10n.t("Job {0} does not exist", job));
             throw new Error("Job " + job + " does not exist");
         }
         const clipItems = makeClipboardPicks(jobInfo);
@@ -27,30 +28,28 @@ export const jobQuickPickProvider: qp.ActionableQuickPickProvider = {
         const fixItems = await makeFixesPicks(resource, job);
 
         const showJobItem = {
-            label: "$(file) Show job",
-            description: "Open the full job spec in the editor",
+            label: l10n.t("$(file) Show job"),
+            description: l10n.t("Open the full job spec in the editor"),
             performAction: () => {
                 const uri = PerforceUri.forCommand(resource, "job", "-o " + job);
                 vscode.window.showTextDocument(uri);
             },
         };
         const editJobItem = {
-            label: "$(edit) Edit job",
-            description: "Edit the full job spec in the editor",
+            label: l10n.t("$(edit) Edit job"),
+            description: l10n.t("Edit the full job spec in the editor"),
             performAction: () => jobSpecEditor.editSpec(resource, job),
         };
 
         return {
             items: [...clipItems, showJobItem, editJobItem, ...fixItems],
-            placeHolder:
-                "Job " +
-                jobInfo.job +
-                " (" +
-                jobInfo.status +
-                ") by " +
-                jobInfo.user +
-                " : " +
-                jobInfo.description,
+            placeHolder: l10n.t(
+                "Job {0} ({1}) by {2} : {3}",
+                jobInfo.job ?? "",
+                jobInfo.status ?? "",
+                jobInfo.user ?? "",
+                jobInfo.description ?? ""
+            ),
         };
     },
 };
@@ -72,7 +71,7 @@ async function makeFixesPicks(
               })
             : [];
     const fixedByItem = {
-        label: "Fixed by changelists: " + fixes.length,
+        label: l10n.t("Fixed by changelists: {0}", fixes.length),
     };
     const fixItems = fixes.map((fix) => {
         const change = described.find((d) => d.chnum === fix.chnum);
@@ -98,8 +97,8 @@ async function makeFixesPicks(
 
 function makeClipboardPicks(jobInfo: Job): qp.ActionableQuickPickItem[] {
     return [
-        qp.makeClipPick("job id", jobInfo.job),
-        qp.makeClipPick("description", jobInfo.description),
-        qp.makeClipPick("user", jobInfo.user),
+        qp.makeClipPick(l10n.t("job id"), jobInfo.job),
+        qp.makeClipPick(l10n.t("description"), jobInfo.description),
+        qp.makeClipPick(l10n.t("user"), jobInfo.user),
     ];
 }

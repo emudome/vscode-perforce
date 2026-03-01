@@ -6,6 +6,7 @@ import {
     Uri,
     commands,
     env,
+    l10n,
 } from "vscode";
 
 import { debounce } from "./Debounce";
@@ -29,7 +30,7 @@ export interface ActiveStatusEvent {
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Display {
-    export const channel = window.createOutputChannel("Perforce Log");
+    export const channel = window.createOutputChannel(l10n.t("Perforce Log"));
 
     let _lastStatusEvent: ActiveStatusEvent | undefined;
 
@@ -49,7 +50,7 @@ export namespace Display {
         if (_statusBarItem) {
             _statusBarItem.show();
             _statusBarItem.text = "P4: $(sync~spin)";
-            _statusBarItem.tooltip = "Checking file status";
+            _statusBarItem.tooltip = l10n.t("Checking file status");
         }
     });
 
@@ -126,7 +127,7 @@ export namespace Display {
                         : ActiveEditorStatus.NOT_IN_WORKSPACE;
                 } else {
                     _statusBarItem.text = "P4: $(circle-slash)";
-                    _statusBarItem.tooltip = "unknown";
+                    _statusBarItem.tooltip = l10n.t("unknown");
                     active = ActiveEditorStatus.NOT_IN_WORKSPACE;
                 }
             } catch (err) {
@@ -179,7 +180,10 @@ export namespace Display {
     }
 
     export function showMessage(message: string) {
-        window.setStatusBarMessage("Perforce: " + message.replace(/\r?\n/g, " "), 3000);
+        window.setStatusBarMessage(
+            l10n.t("Perforce: {0}", message.replace(/\r?\n/g, " ")),
+            3000
+        );
         channel.append(message + "\n");
     }
 
@@ -193,7 +197,10 @@ export namespace Display {
     }
 
     export function showError(error: string) {
-        window.setStatusBarMessage("Perforce: " + error.replace(/\r?\n/g, " "), 3000);
+        window.setStatusBarMessage(
+            l10n.t("Perforce: {0}", error.replace(/\r?\n/g, " ")),
+            3000
+        );
         channel.appendLine(`ERROR: ${JSON.stringify(error)}`);
     }
 
@@ -206,20 +213,20 @@ export namespace Display {
         let loggedIn = await p4.isLoggedIn(resource);
         if (!loggedIn) {
             const password = await window.showInputBox({
-                prompt: "Enter password",
+                prompt: l10n.t("Enter password"),
                 password: true,
             });
             if (password) {
                 try {
                     await p4.login(resource, { password });
 
-                    Display.showMessage("Login successful");
+                    Display.showMessage(l10n.t("Login successful"));
                     Display.updateEditor();
                     loggedIn = true;
                 } catch {}
             }
         } else {
-            Display.showMessage("Login successful");
+            Display.showMessage(l10n.t("Login successful"));
             Display.updateEditor();
             loggedIn = true;
         }
@@ -229,7 +236,7 @@ export namespace Display {
     export async function doLogoutFlow(resource: Uri) {
         try {
             await p4.logout(resource, {});
-            Display.showMessage("Logout successful");
+            Display.showMessage(l10n.t("Logout successful"));
             Display.updateEditor();
             return true;
         } catch {}
@@ -246,12 +253,12 @@ export namespace Display {
         const value = isPositiveOrZero(clipValue) ? clipValue : undefined;
 
         return await window.showInputBox({
-            placeHolder: "Changelist number",
-            prompt: "Enter a changelist number",
+            placeHolder: l10n.t("Changelist number"),
+            prompt: l10n.t("Enter a changelist number"),
             value,
             validateInput: (value) => {
                 if (!isPositiveOrZero(value)) {
-                    return "must be a positive number";
+                    return l10n.t("must be a positive number");
                 }
             },
         });
@@ -264,7 +271,7 @@ export namespace Display {
             : undefined;
         return await window.showInputBox({
             placeHolder: "job00000n",
-            prompt: "Enter a job",
+            prompt: l10n.t("Enter a job"),
             value,
         });
     }

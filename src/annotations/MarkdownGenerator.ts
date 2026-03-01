@@ -14,7 +14,12 @@ export function codicon(name: string) {
 }
 
 export function makeSwarmHostURL(change: p4.FileLogItem) {
-    return _config.getSwarmLink(change.chnum) + ' "Open in review tool"';
+    return (
+        _config.getSwarmLink(change.chnum) +
+        ' "' +
+        vscode.l10n.t("Open in review tool") +
+        '"'
+    );
 }
 
 function makeCommandURI(command: string, ...args: any[]) {
@@ -54,15 +59,18 @@ function makeQuickPickFileURI(underlying: vscode.Uri, change: p4.FileLogItem) {
             "perforce.showQuickPick",
             "file",
             makePerforceURI(underlying, change)
-        ) + ' "Show more actions for this file"'
+        ) +
+        ' "' +
+        vscode.l10n.t("Show more actions for this file") +
+        '"'
     );
 }
 
 function makeQuickPickChangeURI(underlying: vscode.Uri, change: p4.FileLogItem) {
     return (
         makeCommandURI("perforce.showQuickPick", "change", underlying, change.chnum) +
-        ' "Show actions for changelist ' +
-        change.chnum +
+        ' "' +
+        vscode.l10n.t("Show actions for changelist {0}", change.chnum) +
         '"'
     );
 }
@@ -71,10 +79,8 @@ export function makeAnnotateURI(underlying: vscode.Uri, change: p4.FileLogItem) 
     const args = makePerforceURI(underlying, change);
     return (
         makeCommandURI("perforce.annotate", args) +
-        ' "Show annotations for ' +
-        change.file +
-        "#" +
-        change.revision +
+        ' "' +
+        vscode.l10n.t("Show annotations for {0}#{1}", change.file, change.revision) +
         '"'
     );
 }
@@ -92,17 +98,23 @@ export function makeAllLinks(
     prevChange?: p4.FileLogItem
 ) {
     const diffLink = prevChange
-        ? makeMarkdownLink("Diff Previous", makeDiffURI(underlying, prevChange, change))
+        ? makeMarkdownLink(
+              vscode.l10n.t("Diff Previous"),
+              makeDiffURI(underlying, prevChange, change)
+          )
         : undefined;
     const diffLatestLink =
         change !== latestChange
             ? makeMarkdownLink(
-                  "Diff this Revision",
+                  vscode.l10n.t("Diff this Revision"),
                   makeDiffURI(underlying, change, latestChange)
               )
             : undefined;
     const annotateLink = prevChange
-        ? makeMarkdownLink("Annotate Previous", makeAnnotateURI(underlying, prevChange))
+        ? makeMarkdownLink(
+              vscode.l10n.t("Annotate Previous"),
+              makeAnnotateURI(underlying, prevChange)
+          )
         : undefined;
     const swarmLink = _config.swarmHost
         ? makeMarkdownLink(codicon("eye"), makeSwarmHostURL(change), true)
@@ -129,7 +141,7 @@ export function makeUserAndDateSummary(underlying: vscode.Uri, change: p4.FileLo
         change.revision +
         "\n\n" +
         makeMarkdownLink(
-            "Change " + change.chnum,
+            vscode.l10n.t("Change {0}", change.chnum),
             makeQuickPickChangeURI(underlying, change),
             true
         ) +

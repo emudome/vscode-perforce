@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { l10n } from "vscode";
 
 import * as PerforceUri from "../PerforceUri";
 import * as p4 from "../api/PerforceApi";
@@ -58,11 +59,11 @@ export const fileRevisionQuickPickProvider: qp.ActionableQuickPickProvider = {
         return {
             items: actions,
             excludeFromHistory: true,
-            placeHolder:
-                "Choose revision for " +
-                changes.current.file +
-                "#" +
-                changes.current.revision,
+            placeHolder: l10n.t(
+                "Choose revision for {0}#{1}",
+                changes.current.file,
+                changes.current.revision
+            ),
         };
     },
 };
@@ -99,11 +100,11 @@ export const fileDiffQuickPickProvider: qp.ActionableQuickPickProvider = {
         return {
             items: actions,
             excludeFromHistory: true,
-            placeHolder:
-                "Diff revision for " +
-                changes.current.file +
-                "#" +
-                changes.current.revision,
+            placeHolder: l10n.t(
+                "Diff revision for {0}#{1}",
+                changes.current.file,
+                changes.current.revision
+            ),
         };
     },
 };
@@ -142,17 +143,13 @@ function makeCache(details: ChangeDetails): CachedOutput {
 }
 
 function makeRevisionSummary(change: p4.FileLogItem) {
-    return (
-        change.file +
-        "#" +
-        change.revision +
-        " " +
-        change.operation +
-        " on " +
-        toReadableDateTime(change.date) +
-        " by " +
-        change.user +
-        " : " +
+    return l10n.t(
+        "{0}#{1} {2} on {3} by {4} : {5}",
+        change.file,
+        change.revision,
+        change.operation,
+        toReadableDateTime(change.date),
+        change.user,
         change.description
     );
 }
@@ -179,7 +176,7 @@ async function getChangeDetails(
     const uriRev = PerforceUri.getRevOrAtLabel(uri);
     const useRev = !uriRev || isNaN(parseInt(uriRev)) ? haveFile?.revision : uriRev;
     if (!useRev) {
-        Display.showError("Unable to get file details without a revision");
+        Display.showError(l10n.t("Unable to get file details without a revision"));
         throw new Error("No revision available for " + uri.toString());
     }
 
@@ -190,7 +187,7 @@ async function getChangeDetails(
         (await p4.getFileHistory(uri, { file: arg, followBranches: followBranches }));
 
     if (filelog.length === 0) {
-        Display.showImportantError("No file history found");
+        Display.showImportantError(l10n.t("No file history found"));
         throw new Error("Filelog info empty");
     }
 
@@ -295,8 +292,8 @@ function makeAllRevisionPicks(
     const controls: qp.ActionableQuickPickItem[] = [
         {
             label: includeIntegrationTargets
-                ? "$(exclude) Hide integration target files"
-                : "$(gear) Show integration target files",
+                ? l10n.t("$(exclude) Hide integration target files")
+                : l10n.t("$(gear) Show integration target files"),
             performAction: () => {
                 return showRevChooserWithIntegrations(
                     uri,
@@ -309,8 +306,8 @@ function makeAllRevisionPicks(
         },
         {
             label: includeIntegrations
-                ? "$(exclude) Hide integration source files"
-                : "$(gear) Show integration source files",
+                ? l10n.t("$(exclude) Hide integration source files")
+                : l10n.t("$(gear) Show integration source files"),
             performAction: () => {
                 return showRevChooserWithIntegrations(
                     uri,
@@ -323,8 +320,8 @@ function makeAllRevisionPicks(
         },
         {
             label: includeNewerRevisions
-                ? "$(exclude) Hide newer revisions"
-                : "$(gear) Show newer revisions",
+                ? l10n.t("$(exclude) Hide newer revisions")
+                : l10n.t("$(gear) Show newer revisions"),
             performAction: () => {
                 return showRevChooserWithIntegrations(
                     uri,
@@ -353,8 +350,8 @@ function makeDiffRevisionPicks(
     const controls: qp.ActionableQuickPickItem[] = [
         {
             label: includeNewerRevisions
-                ? "$(exclude) Hide newer revisions"
-                : "$(gear) Show newer revisions",
+                ? l10n.t("$(exclude) Hide newer revisions")
+                : l10n.t("$(gear) Show newer revisions"),
             performAction: () => {
                 return showDiffChooserWithOptions(uri, !includeNewerRevisions);
             },
@@ -412,7 +409,7 @@ function makeNextAndPrevPicks(
     return [
         prev
             ? {
-                  label: "$(arrow-small-left) Previous revision",
+                  label: l10n.t("$(arrow-small-left) Previous revision"),
                   description: makeShortSummary(prev),
                   performAction: () => {
                       const prevUri = PerforceUri.fromDepotPath(
@@ -424,12 +421,12 @@ function makeNextAndPrevPicks(
                   },
               }
             : {
-                  label: "$(arrow-small-left) Previous revision",
-                  description: "n/a",
+                  label: l10n.t("$(arrow-small-left) Previous revision"),
+                  description: l10n.t("n/a"),
               },
         next
             ? {
-                  label: "$(arrow-small-right) Next revision",
+                  label: l10n.t("$(arrow-small-right) Next revision"),
                   description: makeShortSummary(next),
                   performAction: () => {
                       const nextUri = PerforceUri.fromDepotPath(
@@ -441,19 +438,19 @@ function makeNextAndPrevPicks(
                   },
               }
             : {
-                  label: "$(arrow-small-right) Next revision",
-                  description: "n/a",
+                  label: l10n.t("$(arrow-small-right) Next revision"),
+                  description: l10n.t("n/a"),
               },
         {
-            label: "$(symbol-numeric) File history...",
-            description: "Go to a specific revision",
+            label: l10n.t("$(symbol-numeric) File history..."),
+            description: l10n.t("Go to a specific revision"),
             performAction: () => {
                 showRevChooserForFile(uri, makeCache(changes));
             },
         },
         integFrom
             ? {
-                  label: "$(git-merge) Go to integration source revision",
+                  label: l10n.t("$(git-merge) Go to integration source revision"),
                   description:
                       integFrom.operation +
                       " from " +
@@ -471,8 +468,8 @@ function makeNextAndPrevPicks(
               }
             : undefined,
         {
-            label: "$(source-control) Go to integration target...",
-            description: "See integrations that include this revision",
+            label: l10n.t("$(source-control) Go to integration target..."),
+            description: l10n.t("See integrations that include this revision"),
             performAction: () => showIntegPickForFile(uri),
         },
     ].filter(isTruthy);
@@ -484,7 +481,7 @@ function makeClipboardPicks(
 ): qp.ActionableQuickPickItem[] {
     return [
         qp.makeClipPick(
-            "depot path",
+            l10n.t("depot path"),
             changes.current.file + "#" + changes.current.revision
         ),
     ];
@@ -496,17 +493,17 @@ function makeSyncPicks(
 ): qp.ActionableQuickPickItem[] {
     return [
         {
-            label: "$(repo-pull) Sync this revision",
-            description:
-                "Sync " +
-                Path.basename(change.current.file) +
-                "#" +
-                change.current.revision,
+            label: l10n.t("$(repo-pull) Sync this revision"),
+            description: l10n.t(
+                "Sync {0}#{1}",
+                Path.basename(change.current.file),
+                change.current.revision
+            ),
             performAction: async () => {
                 await p4.sync(uri, {
                     files: [change.current.file + "#" + change.current.revision],
                 });
-                Display.showMessage("File synced");
+                Display.showMessage(l10n.t("File synced"));
             },
         },
     ];
@@ -521,31 +518,31 @@ function makeDiffPicks(
     const have = changes.haveFile;
     return [
         {
-            label: "$(file) Show this revision",
-            description: "Open this revision in the editor",
+            label: l10n.t("$(file) Show this revision"),
+            description: l10n.t("Open this revision in the editor"),
             performAction: () => {
                 vscode.window.showTextDocument(uri);
             },
         },
         have
             ? {
-                  label: "$(file) Open workspace file",
-                  description: "Open the local file in the editor",
+                  label: l10n.t("$(file) Open workspace file"),
+                  description: l10n.t("Open the local file in the editor"),
                   performAction: () => {
                       vscode.window.showTextDocument(have.localUri);
                   },
               }
             : undefined,
         {
-            label: "$(list-ordered) Annotate this revision",
-            description: "Open in the editor, with change details for each line",
+            label: l10n.t("$(list-ordered) Annotate this revision"),
+            description: l10n.t("Open in the editor, with change details for each line"),
             performAction: () => {
                 AnnotationProvider.annotate(uri);
             },
         },
         prev
             ? {
-                  label: "$(diff) Diff against previous revision",
+                  label: l10n.t("$(diff) Diff against previous revision"),
                   description: DiffProvider.diffTitleForDepotPaths(
                       prev.file,
                       prev.revision,
@@ -557,7 +554,7 @@ function makeDiffPicks(
             : undefined,
         latest !== changes.current
             ? {
-                  label: "$(diff) Diff against latest revision",
+                  label: l10n.t("$(diff) Diff against latest revision"),
                   description: DiffProvider.diffTitleForDepotPaths(
                       changes.current.file,
                       changes.current.revision,
@@ -580,8 +577,8 @@ function makeDiffPicks(
               }
             : undefined,
         {
-            label: "$(diff) Diff against workspace file",
-            description: have ? "" : "No matching workspace file found",
+            label: l10n.t("$(diff) Diff against workspace file"),
+            description: have ? "" : l10n.t("No matching workspace file found"),
             performAction: have
                 ? () => {
                       DiffProvider.diffFiles(
@@ -596,8 +593,8 @@ function makeDiffPicks(
                 : undefined,
         },
         {
-            label: "$(diff) Diff against...",
-            description: "Choose another revision to diff against",
+            label: l10n.t("$(diff) Diff against..."),
+            description: l10n.t("Choose another revision to diff against"),
             performAction: () => {
                 showDiffChooserForFile(uri);
             },
@@ -611,10 +608,9 @@ function makeChangelistPicks(
 ): qp.ActionableQuickPickItem[] {
     return [
         {
-            label: "$(list-flat) Go to changelist details",
+            label: l10n.t("$(list-flat) Go to changelist details"),
             description:
-                "Change " +
-                changes.current.chnum +
+                l10n.t("Change {0}", changes.current.chnum) +
                 nbsp +
                 " $(book) " +
                 nbsp +
